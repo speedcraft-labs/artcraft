@@ -80,9 +80,41 @@ pub async fn prompt_session_log(args: PromptSessionLogArgs<'_>) -> Result<Prompt
     openai_item_id: Option<String>,
   }
 
-  let body = RawRequest { session_id: args.request.session_id, sequence_index: args.request.sequence_index, captured_at_ms: args.request.captured_at_ms, source: "imagine_text", raw_text: args.request.raw_text, route: "/imagine", in_conversation_mode: false, version: args.request.version, video_mode: false, image_prompt_count: 0, style_ref_count: 0, character_ref_count: 0, depth_ref_count: 0, starting_frame_count: 0, ending_frame_count: 0, openai_item_id: None };
+  let body = RawRequest {
+    session_id: args.request.session_id,
+    sequence_index: args.request.sequence_index,
+    captured_at_ms: args.request.captured_at_ms,
+    source: "imagine_text",
+    raw_text: args.request.raw_text,
+    route: "/imagine",
+    in_conversation_mode: false,
+    version: args.request.version,
+    video_mode: false,
+    image_prompt_count: 0,
+    style_ref_count: 0,
+    character_ref_count: 0,
+    depth_ref_count: 0,
+    starting_frame_count: 0,
+    ending_frame_count: 0,
+    openai_item_id: None,
+  };
 
-  let http_request = client.post(url).header("cookie", cookie_header).header("Referer", &referer).header("Referrer-Policy", "origin-when-cross-origin").header("accept", "*/*").header("accept-language", "en-US,en;q=0.8").header("content-type", "application/json").header("priority", "u=1, i").header("sec-fetch-dest", "empty").header("sec-fetch-mode", "cors").header("sec-fetch-site", "same-origin").header("x-csrf-protection", "1").json(&body).build().map_err(MidjourneyClientError::WreqError)?;
+  let http_request = client
+    .post(url)
+    .header("cookie", cookie_header)
+    .header("Referer", &referer)
+    .header("Referrer-Policy", "origin-when-cross-origin")
+    .header("accept", "*/*")
+    .header("accept-language", "en-US,en;q=0.8")
+    .header("content-type", "application/json")
+    .header("priority", "u=1, i")
+    .header("sec-fetch-dest", "empty")
+    .header("sec-fetch-mode", "cors")
+    .header("sec-fetch-site", "same-origin")
+    .header("x-csrf-protection", "1")
+    .json(&body)
+    .build()
+    .map_err(MidjourneyClientError::WreqError)?;
 
   let response = client.execute(http_request).await.map_err(|e| MidjourneyApiError::NetworkError(e.to_string()))?;
 

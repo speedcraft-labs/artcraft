@@ -10,19 +10,14 @@ use sqlite_tasks::queries::list_tasks_by_provider_and_tokens::{list_tasks_by_pro
 use sqlite_tasks::queries::task::Task;
 use tokens::tokens::media_files::MediaFileToken;
 
-pub async fn maybe_send_background_removal_complete_event(
-  app: &tauri::AppHandle,
-  task: &Task,
-  job: &ListSessionJobsItem,
-) -> AnyhowResult<()> {
-
+pub async fn maybe_send_background_removal_complete_event(app: &tauri::AppHandle, task: &Task, job: &ListSessionJobsItem) -> AnyhowResult<()> {
   match task.task_type {
-    TaskType::BackgroundRemoval => {} // NB: Fall-through
+    TaskType::BackgroundRemoval => {}, // NB: Fall-through
     _ => return Ok(()),
   }
 
   match task.frontend_caller {
-    Some(TauriCommandCaller::Canvas) => {} // NB: Fall-through
+    Some(TauriCommandCaller::Canvas) => {}, // NB: Fall-through
     _ => return Ok(()),
   }
 

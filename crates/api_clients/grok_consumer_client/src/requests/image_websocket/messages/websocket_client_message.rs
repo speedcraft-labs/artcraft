@@ -26,7 +26,7 @@ pub struct ClientMessageItem {
 #[derive(Serialize)]
 pub struct ClientMessageItemContent {
   /// UUID
-  #[serde(rename="requestId")]
+  #[serde(rename = "requestId")]
   pub request_id: String,
 
   /// Type of item content
@@ -69,21 +69,12 @@ impl WebsocketClientMessage {
       timestamp: Utc::now().timestamp_millis() as u64,
       item: ClientMessageItem {
         r#type: "message".to_string(),
-        content: vec![
-          ClientMessageItemContent {
-            request_id: Uuid::new_v4().to_string(),
-            r#type: "input_text".to_string(),
-            text: prompt.to_string(),
-            properties: ClientMessageItemContentProperties {
-              section_count: 0,
-              is_kids_mode: false,
-              enable_nsfw: true,
-              skip_upsampler: false,
-              is_initial: false,
-              aspect_ratio,
-            },
-          }
-        ],
+        content: vec![ClientMessageItemContent {
+          request_id: Uuid::new_v4().to_string(),
+          r#type: "input_text".to_string(),
+          text: prompt.to_string(),
+          properties: ClientMessageItemContentProperties { section_count: 0, is_kids_mode: false, enable_nsfw: true, skip_upsampler: false, is_initial: false, aspect_ratio },
+        }],
       },
     }
   }

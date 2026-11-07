@@ -60,7 +60,16 @@ pub async fn refresh_token(args: RefreshTokenArgs<'_>) -> Result<RefreshTokenRes
 
   let form = [("grant_type", "refresh_token"), ("refresh_token", args.request.refresh_token)];
 
-  let http_request = client.post(url).header("Origin", "https://www.midjourney.com").header("Referer", "https://www.midjourney.com/").header("accept", "*/*").header("accept-language", "en-US,en;q=0.8").header("content-type", "application/x-www-form-urlencoded").form(&form).build().map_err(MidjourneyClientError::WreqError)?;
+  let http_request = client
+    .post(url)
+    .header("Origin", "https://www.midjourney.com")
+    .header("Referer", "https://www.midjourney.com/")
+    .header("accept", "*/*")
+    .header("accept-language", "en-US,en;q=0.8")
+    .header("content-type", "application/x-www-form-urlencoded")
+    .form(&form)
+    .build()
+    .map_err(MidjourneyClientError::WreqError)?;
 
   let response = client.execute(http_request).await.map_err(|e| MidjourneyApiError::NetworkError(e.to_string()))?;
 
@@ -92,5 +101,13 @@ pub async fn refresh_token(args: RefreshTokenArgs<'_>) -> Result<RefreshTokenRes
 
   let response = serde_json::from_str::<RawResponse>(&response_body).map_err(|err| MidjourneyApiError::deserialization(err, response_body.as_str()))?;
 
-  Ok(RefreshTokenResponse { access_token: response.access_token, id_token: response.id_token, refresh_token: response.refresh_token, expires_in: response.expires_in, token_type: response.token_type, user_id: response.user_id, project_id: response.project_id })
+  Ok(RefreshTokenResponse {
+    access_token: response.access_token,
+    id_token: response.id_token,
+    refresh_token: response.refresh_token,
+    expires_in: response.expires_in,
+    token_type: response.token_type,
+    user_id: response.user_id,
+    project_id: response.project_id,
+  })
 }

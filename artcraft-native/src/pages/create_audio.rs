@@ -111,7 +111,22 @@ impl CreateAudioPage {
   fn prompt_box(&mut self, ui: &mut Ui, env: &mut Env<'_>, model: Option<&ModelInfo>) {
     let missing_ref = model.is_some_and(|m| self.missing_required_ref(m));
     let accepts: Vec<RefKind> = model.map_or_else(Vec::new, |m| [(RefKind::Audio, m.audio_refs_max), (RefKind::Image, m.image_refs_max)].into_iter().filter(|(_, n)| *n > 0).map(|(k, _)| k).collect());
-    let props = PromptBoxProps { id: Id::new("audio-prompt-box"), placeholder: PLACEHOLDER, enter_to_generate: env.enter_to_generate, mentions: &[], max_length: None, deck: DeckMode::None, accepts: &accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some() && !missing_ref, generating: self.generating, generate_tooltip: "Generate", warning: missing_ref.then_some("Audio track required"), banner: None, extra_input: !self.settings.style_prompt.is_empty() };
+    let props = PromptBoxProps {
+      id: Id::new("audio-prompt-box"),
+      placeholder: PLACEHOLDER,
+      enter_to_generate: env.enter_to_generate,
+      mentions: &[],
+      max_length: None,
+      deck: DeckMode::None,
+      accepts: &accepts,
+      credits: self.cost.credits,
+      generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some() && !missing_ref,
+      generating: self.generating,
+      generate_tooltip: "Generate",
+      warning: missing_ref.then_some("Audio track required"),
+      banner: None,
+      extra_input: !self.settings.style_prompt.is_empty(),
+    };
 
     let playing = self.refs.audios.iter().map(|r| r.id).find(|id| env.audio.is_playing(&ref_key(*id)));
     let image = self.refs.images.first().and_then(|r| r.preview.as_deref()).and_then(|key| match env.cache.get(&env.ctx, key) {
@@ -392,7 +407,11 @@ impl CreateAudioPage {
 /// The audio pickers after the model (`PromptBoxAudio`'s toolbar): the toggles the model offers,
 /// Beat & Key, and Tuning.
 fn audio_toolbar(ui: &mut Ui, caps: &AudioCaps, s: &mut AudioSettings) {
-  let toggles = [(caps.instrumental, &mut s.instrumental, "audio-instrumental", Icon::MicOff, "Instrumental"), (caps.keep_lyrics, &mut s.keep_lyrics, "audio-keep-lyrics", Icon::Mic, "Keep lyrics"), (caps.loopable, &mut s.loopable, "audio-loop", Icon::Repeat, "Loop")];
+  let toggles = [
+    (caps.instrumental, &mut s.instrumental, "audio-instrumental", Icon::MicOff, "Instrumental"),
+    (caps.keep_lyrics, &mut s.keep_lyrics, "audio-keep-lyrics", Icon::Mic, "Keep lyrics"),
+    (caps.loopable, &mut s.loopable, "audio-loop", Icon::Repeat, "Loop"),
+  ];
   for (supported, value, id, icon, label) in toggles {
     if supported && pickers::toggle(ui, Id::new(id), icon, label, *value, &format!("{label}: {}", if *value { "ON" } else { "OFF" })) {
       *value = !*value;
@@ -727,7 +746,9 @@ mod tests {
   }
 
   fn seed_audio() -> ModelInfo {
-    model(json!({ "model": "seed_audio_1p0", "audio_references_supported": true, "audio_references_max": 3, "image_references_supported": true, "image_references_max": 1, "sample_rate_hz_options": [8000, 16000, 24000, 32000, 44100, 48000], "sample_rate_hz_default": 24000, "speed_supported": true, "volume_supported": true, "pitch_supported": true }))
+    model(
+      json!({ "model": "seed_audio_1p0", "audio_references_supported": true, "audio_references_max": 3, "image_references_supported": true, "image_references_max": 1, "sample_rate_hz_options": [8000, 16000, 24000, 32000, 44100, 48000], "sample_rate_hz_default": 24000, "speed_supported": true, "volume_supported": true, "pitch_supported": true }),
+    )
   }
 
   fn page(settings: AudioSettings) -> CreateAudioPage {

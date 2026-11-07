@@ -43,90 +43,27 @@ pub async fn handle_tauri_startup(
   worldlabs_creds_manager: WorldlabsCredentialManager,
   credential_cache: ProviderCredentialLoadingCache,
 ) -> AnyhowResult<()> {
+  set_app_log_level(&app, &root)?;
 
-  set_app_log_level(
-    &app,
-    &root,
-  )?;
+  let task_database = bootstrap_task_database(&app, &root).await?;
 
-  let task_database =
-      bootstrap_task_database(&app, &root).await?;
+  load_provider_priority_state(&app, &root)?;
 
-  load_provider_priority_state(
-    &app,
-    &root,
-  )?;
+  spawn_main_window_thread(&app, &root, &storyteller_creds_manager)?;
 
-  spawn_main_window_thread(
-    &app,
-    &root,
-    &storyteller_creds_manager,
-  )?;
+  spawn_storyteller_threads(&app, &app_env_configs, &artcraft_usage_tracker, &artcraft_platform_info, &task_database, &storyteller_creds_manager)?;
 
-  spawn_storyteller_threads(
-    &app,
-    &app_env_configs,
-    &artcraft_usage_tracker,
-    &artcraft_platform_info,
-    &task_database,
-    &storyteller_creds_manager,
-  )?;
+  spawn_sora_task_polling_thread(&app, &root, &app_env_configs, &task_database, &sora_credential_manager, &storyteller_creds_manager, &sora_task_queue)?;
 
-  spawn_sora_task_polling_thread(
-    &app,
-    &root,
-    &app_env_configs,
-    &task_database,
-    &sora_credential_manager,
-    &storyteller_creds_manager,
-    &sora_task_queue,
-  )?;
+  tauri::async_runtime::spawn(grok_video_task_polling_thread(app.clone(), app_env_configs.clone(), root.clone(), task_database.clone(), grok_creds_manager.clone(), storyteller_creds_manager.clone()));
 
-  tauri::async_runtime::spawn(grok_video_task_polling_thread(
-    app.clone(),
-    app_env_configs.clone(),
-    root.clone(),
-    task_database.clone(),
-    grok_creds_manager.clone(),
-    storyteller_creds_manager.clone(),
-  ));
+  tauri::async_runtime::spawn(grok_image_websocket_thread(app.clone(), app_env_configs.clone(), root.clone(), task_database.clone(), grok_creds_manager.clone(), grok_image_prompt_queue.clone(), storyteller_creds_manager.clone()));
 
-  tauri::async_runtime::spawn(grok_image_websocket_thread(
-    app.clone(),
-    app_env_configs.clone(),
-    root.clone(),
-    task_database.clone(),
-    grok_creds_manager.clone(),
-    grok_image_prompt_queue.clone(),
-    storyteller_creds_manager.clone(),
-  ));
+  tauri::async_runtime::spawn(midjourney_long_polling_thread(app.clone(), app_env_configs.clone(), root.clone(), task_database.clone(), mj_creds_manager.clone(), storyteller_creds_manager.clone()));
 
-  tauri::async_runtime::spawn(midjourney_long_polling_thread(
-    app.clone(),
-    app_env_configs.clone(),
-    root.clone(),
-    task_database.clone(),
-    mj_creds_manager.clone(),
-    storyteller_creds_manager.clone(),
-  ));
+  tauri::async_runtime::spawn(worldlabs_marble_task_polling(app.clone(), app_env_configs.clone(), root.clone(), task_database.clone(), worldlabs_creds_manager.clone(), storyteller_creds_manager.clone()));
 
-  tauri::async_runtime::spawn(worldlabs_marble_task_polling(
-    app.clone(),
-    app_env_configs.clone(),
-    root.clone(),
-    task_database.clone(),
-    worldlabs_creds_manager.clone(),
-    storyteller_creds_manager.clone(),
-  ));
-
-  tauri::async_runtime::spawn(third_party_task_polling_thread(
-    app.clone(),
-    app_env_configs.clone(),
-    root.clone(),
-    task_database.clone(),
-    storyteller_creds_manager.clone(),
-    credential_cache,
-  ));
+  tauri::async_runtime::spawn(third_party_task_polling_thread(app.clone(), app_env_configs.clone(), root.clone(), task_database.clone(), storyteller_creds_manager.clone(), credential_cache));
 
   spawn_discord_presence_thread()?;
 

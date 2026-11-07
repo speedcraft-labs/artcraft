@@ -20,21 +20,7 @@ pub async fn handle_image_edit_sora(
   sora_task_queue: &SoraTaskQueue,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   match model {
-    ImageEditModel::GptImage1 => {
-      handle_sora_gpt_image_1_edit(
-        request,
-        app,
-        app_data_root,
-        app_env_configs,
-        sora_creds_manager,
-        sora_task_queue,
-      ).await
-    },
-    _ => {
-      Err(GenerateError::BadProviderForModel {
-        provider: GenerationProvider::Sora,
-        model: image_edit_model_to_model_type(model),
-      })
-    }
+    ImageEditModel::GptImage1 => handle_sora_gpt_image_1_edit(request, app, app_data_root, app_env_configs, sora_creds_manager, sora_task_queue).await,
+    _ => Err(GenerateError::BadProviderForModel { provider: GenerationProvider::Sora, model: image_edit_model_to_model_type(model) }),
   }
 }

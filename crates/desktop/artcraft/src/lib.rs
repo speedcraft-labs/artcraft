@@ -110,7 +110,7 @@ pub fn run() {
 
   println!("Loading app preferences...");
   let app_preferences = load_app_preferences_or_default(&app_data_root);
-  
+
   let provider_credential_cache = crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache::new(app_data_root.clone());
   let provider_credential_cache_2 = provider_credential_cache.clone();
 
@@ -120,18 +120,17 @@ pub fn run() {
   let storyteller_creds_manager = StorytellerCredentialManager::initialize_empty(&app_data_root);
   let storyteller_creds_manager_2 = storyteller_creds_manager.clone();
   let storyteller_creds_manager_3 = storyteller_creds_manager.clone();
-  
+
   println!("Attempting to read existing sora credentials...");
   let sora_creds_manager = SoraCredentialManager::initialize_from_disk_infallible(&app_data_root);
   let sora_creds_manager_2 = sora_creds_manager.clone();
-  
+
   // Other state
   let sora_task_queue = SoraTaskQueue::new();
   let sora_task_queue_2 = sora_task_queue.clone();
 
-  let app_env_configs = AppEnvConfigs::load_from_filesystem(&app_data_root)
-    .expect("AppEnvConfigs should be loaded from disk");
-  
+  let app_env_configs = AppEnvConfigs::load_from_filesystem(&app_data_root).expect("AppEnvConfigs should be loaded from disk");
+
   let app_env_configs_2 = app_env_configs.clone();
 
   let midjourney_creds_manager = MidjourneyCredentialManager::initialize_from_disk_infallible(&app_data_root);
@@ -148,7 +147,7 @@ pub fn run() {
 
   let worldlabs_bearer_bridge = WorldlabsBearerBridge::empty();
   let worldlabs_bearer_bridge_2 = worldlabs_bearer_bridge.clone();
-  
+
   let artcraft_usage_tracker = ArtcraftUsageTracker::new();
   let artcraft_usage_tracker_2 = artcraft_usage_tracker.clone();
 
@@ -196,7 +195,8 @@ pub fn run() {
           worldlabs_bearer_bridge_2,
           worldlabs_creds_manager_2,
           provider_credential_cache_2,
-        ).await;
+        )
+        .await;
 
         if let Err(err) = result {
           error!("Failed to handle Tauri startup: {:?}", err);
@@ -290,6 +290,5 @@ pub fn run() {
     worldlabs_receive_bearer_command,
   ]);
 
-  builder.run(tauri::generate_context!("tauri.conf.json"))
-    .expect("error while running tauri application");
+  builder.run(tauri::generate_context!("tauri.conf.json")).expect("error while running tauri application");
 }

@@ -55,7 +55,9 @@ pub fn setup_dialog(ctx: &egui::Context, provider: Provider, fal_key: &mut Strin
     ui.add_space(10.0);
     let description = match provider {
       Provider::Fal => format!("Paste your {name} API key to generate with your own {name} account. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool."),
-      _ => format!("You can add your {name} account to ArtCraft by simply logging in. Use your credits and account directly within ArtCraft. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool."),
+      _ => {
+        format!("You can add your {name} account to ArtCraft by simply logging in. Use your credits and account directly within ArtCraft. You can add all of your AI accounts to ArtCraft to use them all in one place and build the ultimate AI art tool.")
+      },
     };
     ui.label(egui::RichText::new(description).size(13.0).color(theme::MUTED));
     ui.add_space(16.0);

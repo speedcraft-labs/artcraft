@@ -17,7 +17,9 @@ impl MidjourneyRequestState {
   pub async fn send(&self, client: &RouterMidjourneyClient) -> Result<GenerateImageResponse, ArtcraftRouterError> {
     let channel_id = ChannelId::UserId(client.user_id.clone());
 
-    let response = text_to_image(TextToImageArgs { request: TextToImageRequest { prompt: &self.prompt, channel_id: &channel_id }, cookie_header: &client.cookie_header, hostname: None, browser: Some(client.browser.clone()) }).await.map_err(|err| ArtcraftRouterError::Provider(ProviderError::Midjourney(err)))?;
+    let response = text_to_image(TextToImageArgs { request: TextToImageRequest { prompt: &self.prompt, channel_id: &channel_id }, cookie_header: &client.cookie_header, hostname: None, browser: Some(client.browser.clone()) })
+      .await
+      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Midjourney(err)))?;
 
     if let Some(job_id) = response.maybe_job_id.clone() {
       return Ok(GenerateImageResponse::Midjourney(MidjourneyImageResponsePayload { job_id }));

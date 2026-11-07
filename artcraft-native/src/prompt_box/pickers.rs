@@ -84,10 +84,17 @@ pub fn option_picker<T: Clone + PartialEq>(ui: &mut Ui, id: Id, trigger: Trigger
 
 /// Opens a popover above `anchor` (toggled by clicking it) and fills it with `content`.
 pub fn popover(anchor: &Response, popup_id: Id, content: impl FnOnce(&mut Ui)) {
-  Popup::from_toggle_button_response(anchor).id(popup_id).align(RectAlign::TOP_START).align_alternatives(&[RectAlign::BOTTOM_START, RectAlign::TOP_END]).gap(6.0).frame(widgets::popover_frame()).close_behavior(PopupCloseBehavior::CloseOnClickOutside).show(|ui| {
-    ui.spacing_mut().item_spacing.y = 2.0;
-    content(ui);
-  });
+  Popup::from_toggle_button_response(anchor)
+    .id(popup_id)
+    .align(RectAlign::TOP_START)
+    .align_alternatives(&[RectAlign::BOTTOM_START, RectAlign::TOP_END])
+    .gap(6.0)
+    .frame(widgets::popover_frame())
+    .close_behavior(PopupCloseBehavior::CloseOnClickOutside)
+    .show(|ui| {
+      ui.spacing_mut().item_spacing.y = 2.0;
+      content(ui);
+    });
 }
 
 /// A toolbar pill that opens a popover of custom `content` above it.

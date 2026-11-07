@@ -75,7 +75,15 @@ pub async fn generate(request: OmniRequest, modality: Modality, app: &AppHandle)
   record_usage(app, &request, modality, job_tokens.len());
   let database = app.state::<TaskDatabase>();
   for job_token in job_tokens {
-    let success = TaskEnqueueSuccess { task_type: modality.task_type(), model: model.clone().map(GenerationModel::Unknown), provider: GenerationProvider::Artcraft, provider_job_id: Some(job_token), maybe_queue_status_url: None, maybe_queue_response_url: None, maybe_prompt_token: None };
+    let success = TaskEnqueueSuccess {
+      task_type: modality.task_type(),
+      model: model.clone().map(GenerationModel::Unknown),
+      provider: GenerationProvider::Artcraft,
+      provider_job_id: Some(job_token),
+      maybe_queue_status_url: None,
+      maybe_queue_response_url: None,
+      maybe_prompt_token: None,
+    };
     if let Err(err) = success.insert_into_task_database_with_frontend_payload(&database, request.frontend_caller, request.frontend_subscriber_id.as_deref(), request.frontend_subscriber_payload.as_deref()).await {
       // Generation has already been accepted. Do not encourage duplicate retries.
       error!("Could not persist accepted Omni generation: {:?}", err);
@@ -103,7 +111,12 @@ pub async fn estimate(request: OmniRequest, modality: Modality, app: &AppHandle)
 pub fn adapt_legacy_response<T: Serialize, E: Serialize, P: Serialize>(response: Response<T, E, P>) -> OmniResult {
   match response {
     Ok(response) => Ok(OmniResponse(serde_json::to_value(response.payload).map_err(local_error)?).into()),
-    Err(err) => Err(CommandErrorResponseWrapper { status: err.status, error_message: err.error_message.or_else(|| serde_json::to_value(err.error_details).ok().and_then(|value| value.get("error_message").and_then(Value::as_str).map(str::to_owned))), error_type: err.error_type.and_then(|value| serde_json::to_value(value).ok()).and_then(|value| value.as_str().map(str::to_owned)), error_details: None }),
+    Err(err) => Err(CommandErrorResponseWrapper {
+      status: err.status,
+      error_message: err.error_message.or_else(|| serde_json::to_value(err.error_details).ok().and_then(|value| value.get("error_message").and_then(Value::as_str).map(str::to_owned))),
+      error_type: err.error_type.and_then(|value| serde_json::to_value(value).ok()).and_then(|value| value.as_str().map(str::to_owned)),
+      error_details: None,
+    }),
   }
 }
 
@@ -140,7 +153,13 @@ async fn resolve_image_inputs(fields: &mut Map<String, Value>, maybe_creds: Opti
     let bytes_key = format!("{}_raw_bytes", name);
     let token: Option<MediaFileToken> = serde_json::from_value(fields.remove(&token_key).unwrap_or(Value::Null)).map_err(local_error)?;
     let bytes: Option<Vec<u8>> = serde_json::from_value(fields.remove(&bytes_key).unwrap_or(Value::Null)).map_err(local_error)?;
-    let resolved = if let Some(creds) = maybe_creds { if name == "inpainting_mask_image" { resolve_mask_field(token.as_ref(), bytes.as_deref(), creds, host).await } else { resolve_image_field(name, token.as_ref(), bytes.as_deref(), creds, host).await }.map_err(|err| local_error(format!("{:?}", err)))?.map(|token| token.to_string()) } else { token.map(|token| token.to_string()).or_else(|| bytes.map(|_| "mf_estimate_reference".into())) };
+    let resolved = if let Some(creds) = maybe_creds {
+      if name == "inpainting_mask_image" { resolve_mask_field(token.as_ref(), bytes.as_deref(), creds, host).await } else { resolve_image_field(name, token.as_ref(), bytes.as_deref(), creds, host).await }
+        .map_err(|err| local_error(format!("{:?}", err)))?
+        .map(|token| token.to_string())
+    } else {
+      token.map(|token| token.to_string()).or_else(|| bytes.map(|_| "mf_estimate_reference".into()))
+    };
     if let Some(token) = resolved {
       if name == "inpainting_mask_image" {
         fields.insert(token_key, Value::String(token));
@@ -176,10 +195,7 @@ fn job_tokens(response: &Value) -> Vec<String> {
 fn record_usage(app: &AppHandle, request: &OmniRequest, modality: Modality, count: usize) {
   let tracker = app.state::<ArtcraftUsageTracker>();
   let count = u16::try_from(count).unwrap_or(u16::MAX);
-  let has_media = request.fields.iter().any(|(key, value)| {
-    key.ends_with("media_token") && value.is_string()
-      || key.ends_with("media_tokens") && value.as_array().is_some_and(|values| !values.is_empty())
-  });
+  let has_media = request.fields.iter().any(|(key, value)| key.ends_with("media_token") && value.is_string() || key.ends_with("media_tokens") && value.as_array().is_some_and(|values| !values.is_empty()));
   let usage = if has_media { ArtcraftUsageType::ImageToResult } else { ArtcraftUsageType::TextToResult };
   let result = match modality {
     Modality::Video => tracker.record_video_generation(count, usage, ArtcraftUsagePage::VideoPage),

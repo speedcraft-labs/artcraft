@@ -19,12 +19,9 @@ pub async fn handle_image_edit_artcraft(
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
-  
   match model {
     ImageEditModel::FluxProKontextMax => handle_artcraft_flux_kontext_edit(request, app, app_data_root, app_env_configs, storyteller_creds_manager).await,
-    ImageEditModel::Gemini25Flash | ImageEditModel::NanoBanana => {
-      handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, RouterImageModel::NanoBanana, GenerationModel::NanoBanana).await
-    },
+    ImageEditModel::Gemini25Flash | ImageEditModel::NanoBanana => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, RouterImageModel::NanoBanana, GenerationModel::NanoBanana).await,
     ImageEditModel::NanoBanana2 => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, RouterImageModel::NanoBanana2, GenerationModel::NanoBanana2).await,
     ImageEditModel::NanoBananaPro => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, RouterImageModel::NanoBananaPro, GenerationModel::NanoBananaPro).await,
     ImageEditModel::GptImage1 => handle_artcraft_gpt_image_1_edit(request, app, app_data_root, app_env_configs, storyteller_creds_manager).await,

@@ -40,7 +40,6 @@ pub async fn handle_artcraft_flux_pro_1_inpaint(
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
-
   let creds = match storyteller_creds_manager.get_credentials()? {
     Some(creds) => creds,
     None => {
@@ -55,11 +54,7 @@ pub async fn handle_artcraft_flux_pro_1_inpaint(
     },
   };
 
-  let mask_media_token = get_mask(
-    request,
-    app_env_configs,
-    &creds,
-  ).await?;
+  let mask_media_token = get_mask(request, app_env_configs, &creds).await?;
 
   info!("Calling Artcraft flux pro 1 inpaint ...");
 
@@ -72,41 +67,26 @@ pub async fn handle_artcraft_flux_pro_1_inpaint(
     Some(3) => Some(FluxPro1InpaintImageNumImages::Three),
     Some(4) => Some(FluxPro1InpaintImageNumImages::Four),
     Some(other) => {
-      return Err(GenerateError::BadInput(BadInputReason::InvalidNumberOfRequestedImages {
-        min: 1,
-        max: 4,
-        requested: other,
-      }));
+      return Err(GenerateError::BadInput(BadInputReason::InvalidNumberOfRequestedImages { min: 1, max: 4, requested: other }));
     },
   };
 
-  let request = FluxPro1InpaintImageRequest {
-    uuid_idempotency_token,
-    prompt: Some(request.prompt.clone()),
-    image_media_token,
-    mask_media_token,
-    num_images,
-  };
+  let request = FluxPro1InpaintImageRequest { uuid_idempotency_token, prompt: Some(request.prompt.clone()), image_media_token, mask_media_token, num_images };
 
-  let result = flux_pro_1_inpaint_image(
-    &app_env_configs.storyteller_host,
-    Some(&creds),
-    request,
-  ).await;
-  
+  let result = flux_pro_1_inpaint_image(&app_env_configs.storyteller_host, Some(&creds), request).await;
+
   let job_id = match result {
     Ok(enqueued) => {
       // TODO(bt,2025-07-05): Enqueue job token?
-      info!("Successfully enqueued Artcraft flux pro 1 inpaint. Job token: {}",
-        enqueued.inference_job_token);
+      info!("Successfully enqueued Artcraft flux pro 1 inpaint. Job token: {}", enqueued.inference_job_token);
       enqueued.inference_job_token
-    }
+    },
     Err(err) => {
       error!("Failed to use Artcraft flux pro 1 inpaint: {:?}", err);
       return Err(GenerateError::from(err));
-    }
+    },
   };
-  
+
   Ok(TaskEnqueueSuccess {
     provider: GenerationProvider::Artcraft,
     model: Some(GenerationModel::FluxPro1),
@@ -118,12 +98,7 @@ pub async fn handle_artcraft_flux_pro_1_inpaint(
   })
 }
 
-async fn get_mask(
-  request: &EnqueueInpaintImageCommand,
-  app_env_configs: &AppEnvConfigs,
-  storyteller_creds: &StorytellerCredentialSet,
-) -> Result<MediaFileToken, GenerateError> {
-
+async fn get_mask(request: &EnqueueInpaintImageCommand, app_env_configs: &AppEnvConfigs, storyteller_creds: &StorytellerCredentialSet) -> Result<MediaFileToken, GenerateError> {
   if request.mask_image_media_token.is_some() && request.mask_image_raw_bytes.is_some() {
     return Err(GenerateError::both_image_mask_media_token_and_bytes_supplied());
   }
@@ -132,14 +107,12 @@ async fn get_mask(
     return Ok(token.clone());
   };
 
-  let image_bytes = request.mask_image_raw_bytes.as_ref()
-    .ok_or(GenerateError::required_source_image_mask_not_provided())?;
+  let image_bytes = request.mask_image_raw_bytes.as_ref().ok_or(GenerateError::required_source_image_mask_not_provided())?;
 
-  let image_bytes = normalize_image_bytes_to_flux_mask(image_bytes)
-      .map_err(|err| {
-        error!("Failed to convert image bytes to png: {:?}", err);
-        GenerateError::AnyhowError(anyhow!("could not encode image mask to png"))
-      })?;
+  let image_bytes = normalize_image_bytes_to_flux_mask(image_bytes).map_err(|err| {
+    error!("Failed to convert image bytes to png: {:?}", err);
+    GenerateError::AnyhowError(anyhow!("could not encode image mask to png"))
+  })?;
 
   info!("Uploading image media file from bytes...");
 
@@ -149,12 +122,13 @@ async fn get_mask(
     image_bytes: image_bytes.0,
     image_type: ImageType::Png,
     is_intermediate_system_file: true,
-      maybe_generation_provider: None,
-  }).await
-      .map_err(|err| {
-        error!("Failed to upload image media file: {:?}", err);
-        GenerateError::from(err)
-      })?;
+    maybe_generation_provider: None,
+  })
+  .await
+  .map_err(|err| {
+    error!("Failed to upload image media file: {:?}", err);
+    GenerateError::from(err)
+  })?;
 
   Ok(result.media_file_token)
 }

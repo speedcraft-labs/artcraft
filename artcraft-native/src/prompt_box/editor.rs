@@ -139,7 +139,17 @@ pub fn show(ui: &mut Ui, prompt: &mut String, state: &mut EditorState, opts: &Ed
   let output = scroll
     .show(&mut child, |ui| {
       let min_h = height.unwrap_or(MIN_HEIGHT);
-      egui::TextEdit::multiline(prompt).id(id).frame(egui::Frame::NONE).font(FontId::new(FONT_SIZE, FontFamily::Proportional)).hint_text(egui::RichText::new(opts.placeholder).color(theme::MUTED).size(FONT_SIZE)).desired_width(text_width).desired_rows(1).min_size(vec2(text_width, min_h)).return_key(return_key).layouter(&mut layouter).show(ui)
+      egui::TextEdit::multiline(prompt)
+        .id(id)
+        .frame(egui::Frame::NONE)
+        .font(FontId::new(FONT_SIZE, FontFamily::Proportional))
+        .hint_text(egui::RichText::new(opts.placeholder).color(theme::MUTED).size(FONT_SIZE))
+        .desired_width(text_width)
+        .desired_rows(1)
+        .min_size(vec2(text_width, min_h))
+        .return_key(return_key)
+        .layouter(&mut layouter)
+        .show(ui)
     })
     .inner;
   let used_h = child.min_rect().height().clamp(MIN_HEIGHT, max_h);
@@ -226,7 +236,8 @@ fn consume_plain_enter(ui: &Ui) -> bool {
 
 fn handle_dropdown_keys(ui: &Ui, id: Id, prompt: &mut String, state: &mut EditorState, filtered: &[&MentionItem]) -> Option<(String, Option<String>)> {
   let n = filtered.len();
-  let (down, up, accept, escape) = ui.input_mut(|i| (i.consume_key(Modifiers::NONE, Key::ArrowDown), i.consume_key(Modifiers::NONE, Key::ArrowUp), i.consume_key(Modifiers::NONE, Key::Enter) || i.consume_key(Modifiers::NONE, Key::Tab), i.consume_key(Modifiers::NONE, Key::Escape)));
+  let (down, up, accept, escape) =
+    ui.input_mut(|i| (i.consume_key(Modifiers::NONE, Key::ArrowDown), i.consume_key(Modifiers::NONE, Key::ArrowUp), i.consume_key(Modifiers::NONE, Key::Enter) || i.consume_key(Modifiers::NONE, Key::Tab), i.consume_key(Modifiers::NONE, Key::Escape)));
   let query = state.mention.as_mut()?;
   if down {
     query.selected = (query.selected + 1) % n;

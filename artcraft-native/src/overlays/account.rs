@@ -188,7 +188,13 @@ pub fn settings_dialog(ctx: &egui::Context, enter_to_generate: &mut bool, userna
 pub(crate) fn text_field(ui: &mut Ui, value: &mut String, password: bool, hint: &str) -> egui::Response {
   let id = ui.next_auto_id();
   let focused = ui.memory(|m| m.has_focus(id));
-  egui::Frame::new().fill(theme::SUNKEN).stroke(Stroke::new(1.0, if focused { theme::ACCENT } else { theme::LINE })).corner_radius(theme::RADIUS).inner_margin(egui::Margin::symmetric(10, 8)).show(ui, |ui| ui.add(egui::TextEdit::singleline(value).id(id).password(password).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text(egui::RichText::new(hint).color(theme::FAINT)))).inner
+  egui::Frame::new()
+    .fill(theme::SUNKEN)
+    .stroke(Stroke::new(1.0, if focused { theme::ACCENT } else { theme::LINE }))
+    .corner_radius(theme::RADIUS)
+    .inner_margin(egui::Margin::symmetric(10, 8))
+    .show(ui, |ui| ui.add(egui::TextEdit::singleline(value).id(id).password(password).frame(egui::Frame::NONE).desired_width(f32::INFINITY).hint_text(egui::RichText::new(hint).color(theme::FAINT))))
+    .inner
 }
 
 /// An on/off switch.

@@ -210,7 +210,13 @@ mod tests {
   #[test]
   fn decodes_progress_with_images() {
     let jpeg = vec![0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10];
-    let frame = encode(&CborValue::Map(vec![(text("current_status"), text("running")), (text("percentage_complete"), CborValue::Float(5.0)), (text("job_id"), text("job-1")), (text("user_id"), text("user-1")), (text("files"), CborValue::Map(vec![(text("0_step_1.jpeg"), CborValue::Bytes(jpeg.clone())), (text("1_step_1.jpeg"), CborValue::Bytes(jpeg.clone()))]))]));
+    let frame = encode(&CborValue::Map(vec![
+      (text("current_status"), text("running")),
+      (text("percentage_complete"), CborValue::Float(5.0)),
+      (text("job_id"), text("job-1")),
+      (text("user_id"), text("user-1")),
+      (text("files"), CborValue::Map(vec![(text("0_step_1.jpeg"), CborValue::Bytes(jpeg.clone())), (text("1_step_1.jpeg"), CborValue::Bytes(jpeg.clone()))])),
+    ]));
 
     let event = MidjourneyWsEvent::from_cbor_frame(&frame).unwrap();
     let MidjourneyWsEvent::Progress(progress) = event else {

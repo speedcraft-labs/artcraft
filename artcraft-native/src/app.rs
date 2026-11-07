@@ -37,7 +37,22 @@ use crate::ui::{creator_icons, widgets, window};
 /// borrowed mutably alongside it).
 macro_rules! env {
   ($app:ident, $ctx:expr) => {
-    Env { ctx: $ctx.clone(), backend: &$app.backend, cache: &mut $app.cache, audio: &mut $app.player, toasts: &mut $app.toasts, catalog: &$app.catalog, signed_in: $app.user.is_some(), enter_to_generate: $app.enter_to_generate, view_mode: $app.view_mode, autoplay: $app.autoplay, ratios: &mut $app.ratios, prompts: &$app.prompts, requests: &mut $app.requests, characters: &$app.characters }
+    Env {
+      ctx: $ctx.clone(),
+      backend: &$app.backend,
+      cache: &mut $app.cache,
+      audio: &mut $app.player,
+      toasts: &mut $app.toasts,
+      catalog: &$app.catalog,
+      signed_in: $app.user.is_some(),
+      enter_to_generate: $app.enter_to_generate,
+      view_mode: $app.view_mode,
+      autoplay: $app.autoplay,
+      ratios: &mut $app.ratios,
+      prompts: &$app.prompts,
+      requests: &mut $app.requests,
+      characters: &$app.characters,
+    }
   };
 }
 
@@ -132,7 +147,46 @@ impl ArtcraftApp {
       backend.load_models(modality);
     }
     backend.refresh_session();
-    let mut app = Self { cache, player, toasts: Toasts::default(), catalog: Catalog::default(), user: None, credits: None, page: saved.page, enter_to_generate: saved.enter_to_generate, view_mode: saved.view_mode, autoplay: saved.autoplay, sidebar_open: saved.sidebar_open, image: CreateImagePage::new(saved.image), video: CreateVideoPage::new(saved.video), audio: CreateAudioPage::new(saved.audio), library: FeedStore::default(), ratios: RatioCache::default(), prompts: HashMap::new(), prompt_records: HashMap::new(), requested_prompts: HashSet::new(), pending_recreate: None, batch_kinds: HashMap::new(), lightbox: None, picker: None, login: None, characters_modal: None, characters: Vec::new(), pending_characters: Vec::new(), settings_open: false, provider_setup: None, midjourney_login: None, fal_key_input: String::new(), preview: None, requests: Vec::new(), screenshot: ScreenshotRequest::from_env(), next_poll: 0.0, next_credits: CREDITS_INTERVAL, models_retry_at: None, backend };
+    let mut app = Self {
+      cache,
+      player,
+      toasts: Toasts::default(),
+      catalog: Catalog::default(),
+      user: None,
+      credits: None,
+      page: saved.page,
+      enter_to_generate: saved.enter_to_generate,
+      view_mode: saved.view_mode,
+      autoplay: saved.autoplay,
+      sidebar_open: saved.sidebar_open,
+      image: CreateImagePage::new(saved.image),
+      video: CreateVideoPage::new(saved.video),
+      audio: CreateAudioPage::new(saved.audio),
+      library: FeedStore::default(),
+      ratios: RatioCache::default(),
+      prompts: HashMap::new(),
+      prompt_records: HashMap::new(),
+      requested_prompts: HashSet::new(),
+      pending_recreate: None,
+      batch_kinds: HashMap::new(),
+      lightbox: None,
+      picker: None,
+      login: None,
+      characters_modal: None,
+      characters: Vec::new(),
+      pending_characters: Vec::new(),
+      settings_open: false,
+      provider_setup: None,
+      midjourney_login: None,
+      fal_key_input: String::new(),
+      preview: None,
+      requests: Vec::new(),
+      screenshot: ScreenshotRequest::from_env(),
+      next_poll: 0.0,
+      next_credits: CREDITS_INTERVAL,
+      models_retry_at: None,
+      backend,
+    };
     app.restore_provider_jobs();
     // Diagnostics: `ARTCRAFT_OPEN=settings` or `midjourney-login` opens that dialog at launch.
     match std::env::var("ARTCRAFT_OPEN").as_deref() {
@@ -257,7 +311,11 @@ impl ArtcraftApp {
         if self.pending_characters.len() != before {
           self.backend.load_characters();
         }
-        for (kind, notices) in [(MediaKind::Image, self.image.feed.apply_jobs(MediaKind::Image, &jobs, &self.catalog)), (MediaKind::Video, self.video.feed.apply_jobs(MediaKind::Video, &jobs, &self.catalog)), (MediaKind::Audio, self.audio.feed.apply_jobs(MediaKind::Audio, &jobs, &self.catalog))] {
+        for (kind, notices) in [
+          (MediaKind::Image, self.image.feed.apply_jobs(MediaKind::Image, &jobs, &self.catalog)),
+          (MediaKind::Video, self.video.feed.apply_jobs(MediaKind::Video, &jobs, &self.catalog)),
+          (MediaKind::Audio, self.audio.feed.apply_jobs(MediaKind::Audio, &jobs, &self.catalog)),
+        ] {
           for notice in notices {
             match notice {
               FeedNotice::Completed => {
@@ -890,7 +948,16 @@ impl eframe::App for ArtcraftApp {
   }
 
   fn save(&mut self, storage: &mut dyn eframe::Storage) {
-    let saved = Saved { page: self.page, enter_to_generate: self.enter_to_generate, view_mode: self.view_mode, autoplay: self.autoplay, sidebar_open: self.sidebar_open, image: self.image.settings.clone(), video: self.video.settings.clone(), audio: self.audio.settings.clone() };
+    let saved = Saved {
+      page: self.page,
+      enter_to_generate: self.enter_to_generate,
+      view_mode: self.view_mode,
+      autoplay: self.autoplay,
+      sidebar_open: self.sidebar_open,
+      image: self.image.settings.clone(),
+      video: self.video.settings.clone(),
+      audio: self.audio.settings.clone(),
+    };
     eframe::set_value(storage, STORAGE_KEY, &saved);
   }
 

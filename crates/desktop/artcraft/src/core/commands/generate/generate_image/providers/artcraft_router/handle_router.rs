@@ -27,32 +27,20 @@ pub async fn handle_router(
 
   info!("handle_router: provider={:?}, credential_key={:?}", provider, credential_key);
 
-  let payload = credential_cache.get_credentials(credential_key)
-    .map_err(|err| {
-      GenerateError::AnyhowError(anyhow::anyhow!("Failed to load credentials: {:?}", err))
-    })?
-    .ok_or_else(|| map_provider_to_missing_credentials_error(provider))?;
+  let payload = credential_cache.get_credentials(credential_key).map_err(|err| GenerateError::AnyhowError(anyhow::anyhow!("Failed to load credentials: {:?}", err)))?.ok_or_else(|| map_provider_to_missing_credentials_error(provider))?;
 
   match payload {
-    ProviderCredentialPayload::ApiKey(api_key_data) => {
-      handle_api_key_provider(request, provider, api_key_data.as_str(), app_env_configs, storyteller_creds_manager).await
-    }
-    ProviderCredentialPayload::WebLogin(web_login_data) => {
-      handle_web_login_provider(request, provider, &web_login_data).await
-    }
+    ProviderCredentialPayload::ApiKey(api_key_data) => handle_api_key_provider(request, provider, api_key_data.as_str(), app_env_configs, storyteller_creds_manager).await,
+    ProviderCredentialPayload::WebLogin(web_login_data) => handle_web_login_provider(request, provider, &web_login_data).await,
   }
 }
 
 // ── Helpers ──
 
-fn map_provider_to_credential_key(
-  provider: GenerationProvider,
-) -> Result<ProviderCredentialKey, GenerateError> {
+fn map_provider_to_credential_key(provider: GenerationProvider) -> Result<ProviderCredentialKey, GenerateError> {
   match provider {
     GenerationProvider::Fal => Ok(ProviderCredentialKey::FalApiKey),
-    _ => Err(GenerateError::NotYetImplemented(
-      format!("Provider {:?} does not have a mapped credential key yet", provider),
-    )),
+    _ => Err(GenerateError::NotYetImplemented(format!("Provider {:?} does not have a mapped credential key yet", provider))),
   }
 }
 

@@ -21,22 +21,13 @@ pub struct WebLoginData {
 
 impl WebLoginData {
   pub fn new() -> Self {
-    Self {
-      cookies_header: None,
-      additional_headers: None,
-      username: None,
-      email_address: None,
-      created_at: None,
-      updated_at: None,
-    }
+    Self { cookies_header: None, additional_headers: None, username: None, email_address: None, created_at: None, updated_at: None }
   }
 
   pub fn load_from_file<P: AsRef<Path>>(file_path: P) -> Result<Self, WebLoginDataError> {
-    let contents = std::fs::read_to_string(file_path)
-      .map_err(WebLoginDataError::IoError)?;
+    let contents = std::fs::read_to_string(file_path).map_err(WebLoginDataError::IoError)?;
 
-    let serializable: WebLoginDataSerializable = serde_json::from_str(&contents)
-      .map_err(WebLoginDataError::DeserializeError)?;
+    let serializable: WebLoginDataSerializable = serde_json::from_str(&contents).map_err(WebLoginDataError::DeserializeError)?;
 
     Ok(Self {
       cookies_header: serializable.cookies_header,
@@ -59,11 +50,9 @@ impl WebLoginData {
       updated_at: self.updated_at,
     };
 
-    let contents = serde_json::to_string_pretty(&serializable)
-      .map_err(WebLoginDataError::SerializeError)?;
+    let contents = serde_json::to_string_pretty(&serializable).map_err(WebLoginDataError::SerializeError)?;
 
-    std::fs::write(file_path, contents)
-      .map_err(WebLoginDataError::IoError)?;
+    std::fs::write(file_path, contents).map_err(WebLoginDataError::IoError)?;
 
     Ok(())
   }
@@ -140,7 +129,9 @@ mod tests {
   #[test]
   fn load_reads_all_fields() {
     let mut file = NamedTempFile::new().unwrap();
-    write!(file, r#"{{
+    write!(
+      file,
+      r#"{{
       "version": 1,
       "cookies_header": "session=abc123; visitor=xyz",
       "additional_headers": {{"Authorization": "Bearer tok"}},
@@ -148,7 +139,9 @@ mod tests {
       "email_address": "test@example.com",
       "created_at": "2026-01-01T00:00:00Z",
       "updated_at": "2026-05-10T12:00:00Z"
-    }}"#).unwrap();
+    }}"#
+    )
+    .unwrap();
 
     let data = WebLoginData::load_from_file(file.path()).unwrap();
     assert_eq!(data.cookies_header.as_deref(), Some("session=abc123; visitor=xyz"));
@@ -178,12 +171,16 @@ mod tests {
   #[test]
   fn load_tolerates_null_fields() {
     let mut file = NamedTempFile::new().unwrap();
-    write!(file, r#"{{
+    write!(
+      file,
+      r#"{{
       "version": 1,
       "cookies_header": null,
       "username": null,
       "email_address": null
-    }}"#).unwrap();
+    }}"#
+    )
+    .unwrap();
 
     let data = WebLoginData::load_from_file(file.path()).unwrap();
     assert!(data.cookies_header.is_none());

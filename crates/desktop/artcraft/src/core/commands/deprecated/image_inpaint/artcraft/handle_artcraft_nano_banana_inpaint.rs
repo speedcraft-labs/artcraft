@@ -44,7 +44,6 @@ pub async fn handle_artcraft_nano_banana_inpaint(
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
-
   let creds = match storyteller_creds_manager.get_credentials()? {
     Some(creds) => creds,
     None => {
@@ -70,41 +69,26 @@ pub async fn handle_artcraft_nano_banana_inpaint(
     Some(3) => Some(Gemini25FlashEditImageNumImages::Three),
     Some(4) => Some(Gemini25FlashEditImageNumImages::Four),
     Some(other) => {
-      return Err(GenerateError::BadInput(BadInputReason::InvalidNumberOfRequestedImages {
-        min: 1,
-        max: 4,
-        requested: other,
-      }));
+      return Err(GenerateError::BadInput(BadInputReason::InvalidNumberOfRequestedImages { min: 1, max: 4, requested: other }));
     },
   };
 
-  let request = Gemini25FlashEditImageRequest {
-    uuid_idempotency_token,
-    prompt: Some(request.prompt.clone()),
-    image_media_tokens: Some(vec![image_media_token]),
-    num_images,
-    image_quality: None,
-  };
+  let request = Gemini25FlashEditImageRequest { uuid_idempotency_token, prompt: Some(request.prompt.clone()), image_media_tokens: Some(vec![image_media_token]), num_images, image_quality: None };
 
-  let result = gemini_25_flash_edit_image(
-    &app_env_configs.storyteller_host,
-    Some(&creds),
-    request,
-  ).await;
+  let result = gemini_25_flash_edit_image(&app_env_configs.storyteller_host, Some(&creds), request).await;
 
   let job_id = match result {
     Ok(enqueued) => {
       // TODO(bt,2025-07-05): Enqueue job token?
-      info!("Successfully enqueued Artcraft gemini 2.5 flash inpaint. Job token: {}",
-        enqueued.inference_job_token);
+      info!("Successfully enqueued Artcraft gemini 2.5 flash inpaint. Job token: {}", enqueued.inference_job_token);
       enqueued.inference_job_token
-    }
+    },
     Err(err) => {
       error!("Failed to use Artcraft gemini 2.5 flash inpaint: {:?}", err);
       return Err(GenerateError::from(err));
-    }
+    },
   };
-  
+
   Ok(TaskEnqueueSuccess {
     provider: GenerationProvider::Artcraft,
     model: Some(GenerationModel::Gemini25Flash),

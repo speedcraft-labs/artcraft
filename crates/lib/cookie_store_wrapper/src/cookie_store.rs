@@ -90,7 +90,15 @@ impl CookieStore {
   /// as a host-only cookie for `source_url`'s host. Returns how many cookies
   /// were stored.
   pub fn insert_cookie_header(&mut self, cookie_header: &str, source_url: &Url) -> usize {
-    cookie_header.split(';').filter_map(|pair| pair.trim().split_once('=')).filter(|(name, _)| !name.trim().is_empty()).map(|(name, value)| (name.trim().to_owned(), value.trim().to_owned())).collect::<Vec<(String, String)>>().into_iter().filter(|(name, value)| self.insert_named(name, value, source_url)).count()
+    cookie_header
+      .split(';')
+      .filter_map(|pair| pair.trim().split_once('='))
+      .filter(|(name, _)| !name.trim().is_empty())
+      .map(|(name, value)| (name.trim().to_owned(), value.trim().to_owned()))
+      .collect::<Vec<(String, String)>>()
+      .into_iter()
+      .filter(|(name, value)| self.insert_named(name, value, source_url))
+      .count()
   }
 
   /// Apply one `Set-Cookie` header value received from `request_url`,

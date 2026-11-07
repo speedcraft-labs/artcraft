@@ -153,7 +153,12 @@ impl LibraryPicker {
   }
 
   fn picks(&self) -> Vec<RefMedia> {
-    self.selected.iter().filter_map(|t| self.items.iter().find(|i| i.token == *t)).map(|f| RefMedia::from_library(self.kind, f.token.clone(), f.thumbnail(256), Some(f.media_links.cdn_url.clone()), f.maybe_duration_millis.map_or(0.0, |ms| ms as f32 / 1000.0))).collect()
+    self
+      .selected
+      .iter()
+      .filter_map(|t| self.items.iter().find(|i| i.token == *t))
+      .map(|f| RefMedia::from_library(self.kind, f.token.clone(), f.thumbnail(256), Some(f.media_links.cdn_url.clone()), f.maybe_duration_millis.map_or(0.0, |ms| ms as f32 / 1000.0)))
+      .collect()
   }
 }
 

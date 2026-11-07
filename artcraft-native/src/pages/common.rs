@@ -141,7 +141,22 @@ pub fn create_shell(ui: &mut Ui, env: &mut Env<'_>, kind: MediaKind, title: &str
   let area = ui.max_rect();
   let bottom_offset = *box_height + 40.0;
   if feed.has_content() {
-    let view = FeedView { id: Id::new(("feed", kind.label())), mode: env.view_mode, pending: &feed.pending, failed: &feed.failed, items: &feed.items, has_more: feed.has_more, loading: feed.loading, selecting: feed.selecting, selected: &feed.selected, last_viewed: feed.last_viewed.as_deref(), prompts: env.prompts, make_video: kind == MediaKind::Image, autoplay: env.autoplay, bottom_padding: bottom_offset + 24.0 };
+    let view = FeedView {
+      id: Id::new(("feed", kind.label())),
+      mode: env.view_mode,
+      pending: &feed.pending,
+      failed: &feed.failed,
+      items: &feed.items,
+      has_more: feed.has_more,
+      loading: feed.loading,
+      selecting: feed.selecting,
+      selected: &feed.selected,
+      last_viewed: feed.last_viewed.as_deref(),
+      prompts: env.prompts,
+      make_video: kind == MediaKind::Image,
+      autoplay: env.autoplay,
+      bottom_padding: bottom_offset + 24.0,
+    };
     let mut feed_ui = ui.new_child(egui::UiBuilder::new().max_rect(area.shrink2(vec2(12.0, 0.0))));
     let actions = grid::show(&mut feed_ui, &view, env.cache, env.ratios, env.audio, env.catalog);
     handle_feed_actions(env, kind, feed, actions);

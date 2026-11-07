@@ -16,7 +16,21 @@ const GROUP_THRESHOLD: usize = 8;
 /// Audio models that work from exactly one audio track (`AUDIO_MODELS_REQUIRING_AUDIO_REF`).
 const AUDIO_MODELS_REQUIRING_AUDIO_REF: [&str; 2] = ["suno_remix", "suno_sample"];
 /// The musical keys (`SoundsSettingsPopover`; there are no E keys): value, label, short label.
-pub const MUSICAL_KEYS: [(&str, &str, &str); 13] = [("auto", "Auto", "Auto"), ("c_major", "C Major", "C"), ("c_minor", "C Minor", "Cm"), ("d_major", "D Major", "D"), ("d_minor", "D Minor", "Dm"), ("f_major", "F Major", "F"), ("f_minor", "F Minor", "Fm"), ("g_major", "G Major", "G"), ("g_minor", "G Minor", "Gm"), ("a_major", "A Major", "A"), ("a_minor", "A Minor", "Am"), ("b_major", "B Major", "B"), ("b_minor", "B Minor", "Bm")];
+pub const MUSICAL_KEYS: [(&str, &str, &str); 13] = [
+  ("auto", "Auto", "Auto"),
+  ("c_major", "C Major", "C"),
+  ("c_minor", "C Minor", "Cm"),
+  ("d_major", "D Major", "D"),
+  ("d_minor", "D Minor", "Dm"),
+  ("f_major", "F Major", "F"),
+  ("f_minor", "F Minor", "Fm"),
+  ("g_major", "G Major", "G"),
+  ("g_minor", "G Minor", "Gm"),
+  ("a_major", "A Major", "A"),
+  ("a_minor", "A Minor", "Am"),
+  ("b_major", "B Major", "B"),
+  ("b_minor", "B Minor", "Bm"),
+];
 
 /// One generation model and what it accepts.
 #[derive(Clone, Debug, Default)]
@@ -234,7 +248,20 @@ pub fn audio_model(d: &crate::backend::wire::AudioModel) -> ModelInfo {
   let max = |supported: bool, max: Option<u16>| if supported { max.map_or(1, usize::from) } else { 0 };
   m.audio_refs_max = max(d.audio_references_supported, d.audio_references_max);
   m.image_refs_max = max(d.image_references_supported, d.image_references_max);
-  m.audio = AudioCaps { style_prompt: d.style_prompt_supported, instrumental: d.instrumental_toggle_supported, keep_lyrics: d.keep_lyrics_supported, loopable: d.loopable_toggle_supported, bpm: d.bpm_supported, musical_key: d.musical_key_supported, sample_rates: d.sample_rate_hz_options.clone(), sample_rate_default: d.sample_rate_hz_default, speed: d.speed_supported, volume: d.volume_supported, pitch: d.pitch_supported, requires_audio_ref: AUDIO_MODELS_REQUIRING_AUDIO_REF.contains(&d.model.as_str()) };
+  m.audio = AudioCaps {
+    style_prompt: d.style_prompt_supported,
+    instrumental: d.instrumental_toggle_supported,
+    keep_lyrics: d.keep_lyrics_supported,
+    loopable: d.loopable_toggle_supported,
+    bpm: d.bpm_supported,
+    musical_key: d.musical_key_supported,
+    sample_rates: d.sample_rate_hz_options.clone(),
+    sample_rate_default: d.sample_rate_hz_default,
+    speed: d.speed_supported,
+    volume: d.volume_supported,
+    pitch: d.pitch_supported,
+    requires_audio_ref: AUDIO_MODELS_REQUIRING_AUDIO_REF.contains(&d.model.as_str()),
+  };
   m
 }
 
@@ -321,7 +348,23 @@ pub fn display_name(id: &str) -> String {
 /// A model's prompt limit when the listing doesn't give one (the static lists' `maxPromptLength`;
 /// `None` = unlimited, unknown models get the desktop's 1000).
 fn default_prompt_max(id: &str) -> Option<usize> {
-  const LIMITS: [(&str, Option<usize>); 15] = [("nano_banana", None), ("gpt_image", None), ("seedance_2", None), ("seedance_1", Some(3000)), ("grok_imagine_video", Some(4096)), ("grok_video", Some(4096)), ("grok", Some(8000)), ("midjourney", Some(6000)), ("flux", Some(4000)), ("seedream", Some(4000)), ("qwen", Some(800)), ("kling", Some(2500)), ("happy_horse", Some(2500)), ("sora", Some(2000)), ("veo", Some(5000))];
+  const LIMITS: [(&str, Option<usize>); 15] = [
+    ("nano_banana", None),
+    ("gpt_image", None),
+    ("seedance_2", None),
+    ("seedance_1", Some(3000)),
+    ("grok_imagine_video", Some(4096)),
+    ("grok_video", Some(4096)),
+    ("grok", Some(8000)),
+    ("midjourney", Some(6000)),
+    ("flux", Some(4000)),
+    ("seedream", Some(4000)),
+    ("qwen", Some(800)),
+    ("kling", Some(2500)),
+    ("happy_horse", Some(2500)),
+    ("sora", Some(2000)),
+    ("veo", Some(5000)),
+  ];
   LIMITS.iter().find(|(prefix, _)| id.starts_with(prefix)).map_or(Some(DEFAULT_PROMPT_MAX), |(_, limit)| *limit)
 }
 
@@ -372,13 +415,56 @@ pub fn expected_secs(id: &str, kind: MediaKind) -> f32 {
 
 /// The maker, by id prefix, when the server doesn't say.
 pub fn creator_for(id: &str) -> &'static str {
-  const PREFIXES: [(&str, &str); 18] = [("suno", "suno"), ("seed_audio", "bytedance"), ("flux", "black_forest_labs"), ("nano_banana", "google"), ("gemini", "google"), ("veo", "google"), ("imagen", "google"), ("gpt_image", "openai"), ("sora", "openai"), ("seedream", "bytedance"), ("seedance", "bytedance"), ("seededit", "bytedance"), ("kling", "kling"), ("grok", "grok"), ("midjourney", "midjourney"), ("qwen", "alibaba"), ("happy_horse", "alibaba"), ("minimax", "minimax")];
+  const PREFIXES: [(&str, &str); 18] = [
+    ("suno", "suno"),
+    ("seed_audio", "bytedance"),
+    ("flux", "black_forest_labs"),
+    ("nano_banana", "google"),
+    ("gemini", "google"),
+    ("veo", "google"),
+    ("imagen", "google"),
+    ("gpt_image", "openai"),
+    ("sora", "openai"),
+    ("seedream", "bytedance"),
+    ("seedance", "bytedance"),
+    ("seededit", "bytedance"),
+    ("kling", "kling"),
+    ("grok", "grok"),
+    ("midjourney", "midjourney"),
+    ("qwen", "alibaba"),
+    ("happy_horse", "alibaba"),
+    ("minimax", "minimax"),
+  ];
   PREFIXES.iter().find(|(p, _)| id.starts_with(p)).map_or("artcraft", |(_, c)| c)
 }
 
 /// The picker family (`getModelFamilyName`).
 fn family(id: &str) -> &'static str {
-  const FAMILIES: [(&str, &str); 23] = [("seed_audio", "Seed Audio"), ("seedance", "Seedance"), ("kling", "Kling"), ("veo", "Veo"), ("sora", "Sora"), ("happy_horse", "Happy Horse"), ("wan", "Wan"), ("vidu", "Vidu"), ("preview", "Preview"), ("nano_banana", "Nano Banana"), ("gemini_25_flash", "Nano Banana"), ("seedream", "Seedream"), ("seededit", "SeedEdit"), ("gpt_image", "GPT Image"), ("flux", "Flux"), ("midjourney", "Midjourney"), ("grok", "Grok"), ("qwen", "Qwen"), ("recraft", "Recraft"), ("imagen", "Imagen"), ("minimax", "MiniMax"), ("marble", "World Labs"), ("suno", "Suno")];
+  const FAMILIES: [(&str, &str); 23] = [
+    ("seed_audio", "Seed Audio"),
+    ("seedance", "Seedance"),
+    ("kling", "Kling"),
+    ("veo", "Veo"),
+    ("sora", "Sora"),
+    ("happy_horse", "Happy Horse"),
+    ("wan", "Wan"),
+    ("vidu", "Vidu"),
+    ("preview", "Preview"),
+    ("nano_banana", "Nano Banana"),
+    ("gemini_25_flash", "Nano Banana"),
+    ("seedream", "Seedream"),
+    ("seededit", "SeedEdit"),
+    ("gpt_image", "GPT Image"),
+    ("flux", "Flux"),
+    ("midjourney", "Midjourney"),
+    ("grok", "Grok"),
+    ("qwen", "Qwen"),
+    ("recraft", "Recraft"),
+    ("imagen", "Imagen"),
+    ("minimax", "MiniMax"),
+    ("marble", "World Labs"),
+    ("suno", "Suno"),
+  ];
   FAMILIES.iter().find(|(p, _)| id.starts_with(p)).map_or("Other", |(_, f)| f)
 }
 

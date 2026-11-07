@@ -24,15 +24,9 @@ pub async fn sora_image_gen_simple(args: SoraImageGenSimpleRequest<'_>) -> Resul
     inpaint_items: vec![],
   };
 
-  let result = image_gen_http_request(
-    sora_request, 
-    args.credentials, 
-    args.request_timeout
-  ).await?;
+  let result = image_gen_http_request(sora_request, args.credentials, args.request_timeout).await?;
 
-  Ok(SoraImageGenResponse {
-    task_id: result.id,
-  })
+  Ok(SoraImageGenResponse { task_id: result.id })
 }
 
 #[cfg(test)]
@@ -53,7 +47,8 @@ mod tests {
       image_size: ImageSize::Square,
       credentials: &creds,
       request_timeout: None,
-    }).await?;
+    })
+    .await?;
 
     println!("task_id: {}", response.task_id);
 

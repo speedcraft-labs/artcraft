@@ -20,16 +20,8 @@ use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 
 /// Handle QwenEdit2511Angles image editing via the artcraft_router.
-pub async fn handle_qwen_edit_2511_angles(
-  request: &TauriGenerateImageRequest,
-  semantic_media_files: &SemanticMediaFiles,
-  creds: &StorytellerCredentialSet,
-  app_env_configs: &AppEnvConfigs,
-) -> Result<TaskEnqueueSuccess, GenerateError> {
-  let client = RouterClient::Artcraft(RouterArtcraftClient::new(
-    app_env_configs.storyteller_host.clone(),
-    creds.clone(),
-  ));
+pub async fn handle_qwen_edit_2511_angles(request: &TauriGenerateImageRequest, semantic_media_files: &SemanticMediaFiles, creds: &StorytellerCredentialSet, app_env_configs: &AppEnvConfigs) -> Result<TaskEnqueueSuccess, GenerateError> {
+  let client = RouterClient::Artcraft(RouterArtcraftClient::new(app_env_configs.storyteller_host.clone(), creds.clone()));
 
   let image_inputs = build_image_inputs(request, semantic_media_files);
 
@@ -59,9 +51,7 @@ pub async fn handle_qwen_edit_2511_angles(
     // Artcraft-side angle models always return a Request — never a Draft.
     // The only draft-producing models today are Kinovi-Midjourney variants,
     // which are routed to a separate provider.
-    ImageGenerationDraftOrRequest::Draft(_) => unreachable!(
-      "Artcraft QwenEdit2511Angles should never produce a draft"
-    ),
+    ImageGenerationDraftOrRequest::Draft(_) => unreachable!("Artcraft QwenEdit2511Angles should never produce a draft"),
   };
 
   let response = request.send_request(&client).await.map_err(|err| {
@@ -69,10 +59,7 @@ pub async fn handle_qwen_edit_2511_angles(
     GenerateError::from(err)
   })?;
 
-  let job_id = response
-    .get_artcraft_payload()
-    .map(|p| p.inference_job_token.to_string())
-    .ok_or(GenerateError::ResponseHadNoJobTokens)?;
+  let job_id = response.get_artcraft_payload().map(|p| p.inference_job_token.to_string()).ok_or(GenerateError::ResponseHadNoJobTokens)?;
 
   info!("QwenEdit2511Angles succeeded: job_id={}", job_id);
 
@@ -87,10 +74,7 @@ pub async fn handle_qwen_edit_2511_angles(
   })
 }
 
-fn build_image_inputs(
-  request: &TauriGenerateImageRequest,
-  semantic_media_files: &SemanticMediaFiles,
-) -> Option<ImageListRef> {
+fn build_image_inputs(request: &TauriGenerateImageRequest, semantic_media_files: &SemanticMediaFiles) -> Option<ImageListRef> {
   let mut tokens = Vec::new();
 
   if let Some(scene_token) = &semantic_media_files.scene_image_media_token {
@@ -103,5 +87,9 @@ fn build_image_inputs(
     tokens.extend(media_tokens.clone());
   }
 
-  if tokens.is_empty() { None } else { Some(ImageListRef::MediaFileTokens(tokens)) }
+  if tokens.is_empty() {
+    None
+  } else {
+    Some(ImageListRef::MediaFileTokens(tokens))
+  }
 }

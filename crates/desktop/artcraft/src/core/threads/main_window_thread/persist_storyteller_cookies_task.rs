@@ -109,7 +109,10 @@ mod login_bridge_tests {
     let manager = StorytellerCredentialManager::initialize_empty(&root);
     let mut jar = CookieStore::default();
     let url = Url::parse("https://api.storyteller.ai/v1/login_challenges/poll").unwrap();
-    jar.store_response_cookies([RawCookie::parse("session=signed_backend_cookie; Secure; HttpOnly; Path=/; Max-Age=3600").unwrap().into_owned(), RawCookie::parse("visitor=existing_visitor; Secure; Path=/; Max-Age=3600").unwrap().into_owned()].into_iter(), &url);
+    jar.store_response_cookies(
+      [RawCookie::parse("session=signed_backend_cookie; Secure; HttpOnly; Path=/; Max-Age=3600").unwrap().into_owned(), RawCookie::parse("visitor=existing_visitor; Secure; Path=/; Max-Age=3600").unwrap().into_owned()].into_iter(),
+      &url,
+    );
     sync_tauri_credentials(&jar, &manager, &url).unwrap();
     let credentials = manager.get_credentials_required().unwrap();
     assert_eq!(credentials.session.unwrap().as_str(), "signed_backend_cookie");

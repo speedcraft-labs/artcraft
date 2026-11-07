@@ -44,14 +44,9 @@ pub enum DetectedOs {
 }
 
 #[tauri::command]
-pub fn get_app_info_command(
-  app_data_root: State<'_, AppDataRoot>,
-  app_env_configs: State<'_, AppEnvConfigs>,
-  artcraft_platform_info: State<'_, ArtcraftPlatformInfo>,
-  app_prefs: State<'_, AppPreferencesManager>,
-) -> InfallibleResponse<AppInfoResponse> {
+pub fn get_app_info_command(app_data_root: State<'_, AppDataRoot>, app_env_configs: State<'_, AppEnvConfigs>, artcraft_platform_info: State<'_, ArtcraftPlatformInfo>, app_prefs: State<'_, AppPreferencesManager>) -> InfallibleResponse<AppInfoResponse> {
   info!("get_app_info_command called...");
-  
+
   let storyteller_host = app_env_configs.storyteller_host.to_api_hostname_and_scheme();
 
   let os_platform = match artcraft_platform_info.os_platform {
@@ -64,14 +59,11 @@ pub fn get_app_info_command(
   let root_directory = app_data_root.path().to_path_buf();
 
   let download_directory = match app_prefs.get_clone() {
-    Ok(app_prefs) => {
-      app_prefs.preferred_download_directory
-          .download_directory(&app_data_root)
-    }
+    Ok(app_prefs) => app_prefs.preferred_download_directory.download_directory(&app_data_root),
     Err(err) => {
       warn!("Can't get user download directory: {:?}", err);
       app_data_root.downloads_dir().path().to_path_buf()
-    }
+    },
   };
 
   AppInfoResponse {
@@ -85,6 +77,6 @@ pub fn get_app_info_command(
     storyteller_host,
     artcraft_root_directory: root_directory,
     download_directory,
-  }.into()
+  }
+  .into()
 }
-

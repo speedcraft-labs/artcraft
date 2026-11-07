@@ -521,8 +521,22 @@ impl Backend {
     let api = self.api();
     self.spawn(move |tx| async move {
       let token = match kind {
-        RefKind::Image => upload_image_media_file_from_file(UploadImageFromFileArgs { api_host: &api.host, maybe_creds: api.creds.as_ref(), path: &path, is_intermediate_system_file: true, maybe_prompt_token: None, maybe_generation_provider: None, maybe_batch_token: None }).await.map(|r| r.media_file_token.to_string()).map_err(|e| api_message(&e)),
-        RefKind::Video => upload_video_media_file_from_file(UploadVideoFromFileArgs { api_host: &api.host, maybe_creds: api.creds.as_ref(), path: &path, maybe_prompt_token: None, maybe_generation_provider: None }).await.map(|r| r.media_file_token.to_string()).map_err(|e| api_error_message(&e)),
+        RefKind::Image => upload_image_media_file_from_file(UploadImageFromFileArgs {
+          api_host: &api.host,
+          maybe_creds: api.creds.as_ref(),
+          path: &path,
+          is_intermediate_system_file: true,
+          maybe_prompt_token: None,
+          maybe_generation_provider: None,
+          maybe_batch_token: None,
+        })
+        .await
+        .map(|r| r.media_file_token.to_string())
+        .map_err(|e| api_message(&e)),
+        RefKind::Video => upload_video_media_file_from_file(UploadVideoFromFileArgs { api_host: &api.host, maybe_creds: api.creds.as_ref(), path: &path, maybe_prompt_token: None, maybe_generation_provider: None })
+          .await
+          .map(|r| r.media_file_token.to_string())
+          .map_err(|e| api_error_message(&e)),
         RefKind::Audio => api.upload_audio(&path).await,
       };
       let result = match token {
@@ -862,7 +876,12 @@ impl Api {
     }
     let info = self.get_json::<FileResponse>(&format!("/v1/media_files/file/{token}")).await.ok();
     let file = info.map(|r| r.media_file);
-    UploadedMedia { duration_secs: file.as_ref().and_then(|f| f.maybe_duration_millis).map_or(0.0, |ms| ms as f32 / 1000.0), thumbnail: file.as_ref().and_then(|f| f.thumbnail(256)), full_url: file.as_ref().map(|f| f.media_links.cdn_url.clone()).filter(|u| !u.is_empty()), token }
+    UploadedMedia {
+      duration_secs: file.as_ref().and_then(|f| f.maybe_duration_millis).map_or(0.0, |ms| ms as f32 / 1000.0),
+      thumbnail: file.as_ref().and_then(|f| f.thumbnail(256)),
+      full_url: file.as_ref().map(|f| f.media_links.cdn_url.clone()).filter(|u| !u.is_empty()),
+      token,
+    }
   }
 }
 

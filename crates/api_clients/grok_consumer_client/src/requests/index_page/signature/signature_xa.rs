@@ -3,27 +3,24 @@ use log::debug;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
-static CLEAN_NON_DIGIT_REGEX : Lazy<Regex> = Lazy::new(|| {
-  Regex::new(r#"[^\d]+"#)
-      .expect("Regex should parse")
-});
+static CLEAN_NON_DIGIT_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#"[^\d]+"#).expect("Regex should parse"));
 
 /*
-    @staticmethod
-    def xa(svg: str) -> List[List[int]]:
-        s = (svg)
-        substr = s[9:]
-        parts = substr.split("C")
-        out = []
-        for part in parts:
-            cleaned = sub(r"[^\d]+", " ", part).strip()
-            if cleaned == "":
-                nums = [0]
-            else:
-                nums = [int(tok) for tok in cleaned.split() if tok != ""]
-            out.append(nums)
-        return out
- */
+   @staticmethod
+   def xa(svg: str) -> List[List[int]]:
+       s = (svg)
+       substr = s[9:]
+       parts = substr.split("C")
+       out = []
+       for part in parts:
+           cleaned = sub(r"[^\d]+", " ", part).strip()
+           if cleaned == "":
+               nums = [0]
+           else:
+               nums = [int(tok) for tok in cleaned.split() if tok != ""]
+           out.append(nums)
+       return out
+*/
 
 /// Based on "Grok-Api/core/xctid.py"
 /// `svg_data` is the <path d="" /> svg path stroke data
@@ -90,7 +87,7 @@ mod tests {
       vec![197, 165, 180, 214, 102, 16, 88, 252, 48, 189, 166],
       vec![163, 237, 57, 253, 154, 60, 96, 84, 56, 15, 66],
       vec![177, 101, 10, 202, 185, 227, 29, 204, 55, 115, 219],
-      vec![103, 82, 127, 143, 194, 99, 102, 179, 63, 84, 110]
+      vec![103, 82, 127, 143, 194, 99, 102, 179, 63, 84, 110],
     ];
 
     let output = signature_xa(&svg_data).unwrap();

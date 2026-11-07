@@ -114,7 +114,22 @@ impl CreateVideoPage {
     }
     let needs_start = model.is_some_and(|m| self.needs_start_frame(m));
     let banner = model.filter(|m| !m.text_to_video && !self.has_image_input()).map(|_| TEXT_ONLY_BANNER);
-    let props = PromptBoxProps { id: Id::new("video-prompt-box"), placeholder: if reference { PLACEHOLDER_REFERENCE } else { PLACEHOLDER }, enter_to_generate: env.enter_to_generate, mentions: &mentions, max_length: Some(model.map_or(Some(DEFAULT_PROMPT_MAX), |m| m.prompt_max)), deck, accepts: &accepts, credits: self.cost.credits, generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some() && !needs_start, generating: self.generating, generate_tooltip: if needs_start { "Add a starting image before generating" } else { "Generate" }, warning: needs_start.then_some("Starting frame required"), banner, extra_input: false };
+    let props = PromptBoxProps {
+      id: Id::new("video-prompt-box"),
+      placeholder: if reference { PLACEHOLDER_REFERENCE } else { PLACEHOLDER },
+      enter_to_generate: env.enter_to_generate,
+      mentions: &mentions,
+      max_length: Some(model.map_or(Some(DEFAULT_PROMPT_MAX), |m| m.prompt_max)),
+      deck,
+      accepts: &accepts,
+      credits: self.cost.credits,
+      generate_enabled: !self.settings.prompt.trim().is_empty() && model.is_some() && !needs_start,
+      generating: self.generating,
+      generate_tooltip: if needs_start { "Add a starting image before generating" } else { "Generate" },
+      warning: needs_start.then_some("Starting frame required"),
+      banner,
+      extra_input: false,
+    };
 
     let models = &env.catalog.video_page;
     let mut prompt = std::mem::take(&mut self.settings.prompt);
@@ -349,7 +364,12 @@ impl CreateVideoPage {
     if !estimate {
       f.insert("prompt".into(), json!(s.prompt));
     }
-    let resolved = [("aspect_ratio", ModelInfo::resolve(s.aspect_ratio.as_deref(), &m.aspect_ratios, m.aspect_default.as_ref())), ("resolution", ModelInfo::resolve(s.resolution.as_deref(), &m.resolutions, m.resolution_default.as_ref()).filter(|_| !m.resolutions.is_empty())), ("bitrate", ModelInfo::resolve(s.bitrate.as_deref(), &m.bitrates, m.bitrate_default.as_ref()).filter(|_| !m.bitrates.is_empty())), ("output_format", ModelInfo::resolve(s.output_format.as_deref(), &m.output_formats, m.output_format_default.as_ref()).filter(|_| !m.output_formats.is_empty()))];
+    let resolved = [
+      ("aspect_ratio", ModelInfo::resolve(s.aspect_ratio.as_deref(), &m.aspect_ratios, m.aspect_default.as_ref())),
+      ("resolution", ModelInfo::resolve(s.resolution.as_deref(), &m.resolutions, m.resolution_default.as_ref()).filter(|_| !m.resolutions.is_empty())),
+      ("bitrate", ModelInfo::resolve(s.bitrate.as_deref(), &m.bitrates, m.bitrate_default.as_ref()).filter(|_| !m.bitrates.is_empty())),
+      ("output_format", ModelInfo::resolve(s.output_format.as_deref(), &m.output_formats, m.output_format_default.as_ref()).filter(|_| !m.output_formats.is_empty())),
+    ];
     for (key, value) in resolved {
       if let Some(v) = value {
         f.insert(key.into(), json!(v));
