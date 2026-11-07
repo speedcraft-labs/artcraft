@@ -108,7 +108,21 @@ mod tests {
   fn jobs_survive_a_restart_and_keep_their_upload_tokens() {
     let dir = std::env::temp_dir().join(format!("artcraft-native-jobs-{}", uuid::Uuid::new_v4()));
     let store = JobStore::load(&dir);
-    let mut job = ProviderJob { id: "local_1".into(), provider: Provider::Midjourney, model_id: "midjourney_7".into(), prompt: "a fox".into(), created_at: 1, batch_count: 4, provider_job_id: "mj".into(), maybe_status_url: None, maybe_response_url: None, maybe_prompt_token: None, batch_token: "batch_1".into(), upload_tokens: Vec::new(), uploaded: Vec::new() };
+    let mut job = ProviderJob {
+      id: "local_1".into(),
+      provider: Provider::Midjourney,
+      model_id: "midjourney_7".into(),
+      prompt: "a fox".into(),
+      created_at: 1,
+      batch_count: 4,
+      provider_job_id: "mj".into(),
+      maybe_status_url: None,
+      maybe_response_url: None,
+      maybe_prompt_token: None,
+      batch_token: "batch_1".into(),
+      upload_tokens: Vec::new(),
+      uploaded: Vec::new(),
+    };
     let first = job.upload_token(2);
     assert_eq!(job.upload_tokens.len(), 3);
     assert_eq!(job.upload_token(2), first, "a retried upload reuses its token");

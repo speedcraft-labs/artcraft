@@ -25,18 +25,11 @@ pub async fn sora_image_gen_remix(request: SoraImageGenRemixRequest<'_>) -> Resu
     width: request.image_size.as_width(),
     height: request.image_size.as_height(),
     n_frames: 1,
-    inpaint_items: request.sora_media_tokens.into_iter().map(|token| {
-      InpaintItem {
-        r#type: InpaintItemType::Image,
-        frame_index: 0,
-        preset_id: None,
-        generation_id: None,
-        upload_media_id: token,
-        source_start_frame: 0,
-        source_end_frame: 0,
-        crop_bounds: None,
-      }
-    }).collect(),
+    inpaint_items: request
+      .sora_media_tokens
+      .into_iter()
+      .map(|token| InpaintItem { r#type: InpaintItemType::Image, frame_index: 0, preset_id: None, generation_id: None, upload_media_id: token, source_start_frame: 0, source_end_frame: 0, crop_bounds: None })
+      .collect(),
   };
 
   // TODO: Replace this with debug level logging in the future.
@@ -44,9 +37,7 @@ pub async fn sora_image_gen_remix(request: SoraImageGenRemixRequest<'_>) -> Resu
 
   let result = image_gen_http_request(args, request.credentials, request.request_timeout).await?;
 
-  Ok(SoraImageGenResponse {
-    task_id: result.id,
-  })
+  Ok(SoraImageGenResponse { task_id: result.id })
 }
 
 #[cfg(test)]
@@ -70,11 +61,7 @@ mod tests {
     let bearer = read_to_string(test_file_path("test_data/temp/bearer.txt")?)?;
     let bearer = bearer.trim().to_string();
 
-    let creds = SoraCredentialBuilder::new()
-        .with_cookies(&cookie)
-        .with_jwt_bearer_token(&bearer)
-        .with_sora_sentinel(&sentinel)
-        .build()?;
+    let creds = SoraCredentialBuilder::new().with_cookies(&cookie).with_jwt_bearer_token(&bearer).with_sora_sentinel(&sentinel).build()?;
 
     let response = sora_image_gen_remix(SoraImageGenRemixRequest {
       prompt: "Match the pose and scene layout from the uploaded image exactly. A smart dog getting kisses from another dog. Brick building. Anime style".to_string(),
@@ -83,7 +70,8 @@ mod tests {
       sora_media_tokens: vec!["media_01jqyhrz4detyvtzwp2p4j63ad".to_string()],
       credentials: &creds,
       request_timeout: None,
-    }).await?;
+    })
+    .await?;
 
     println!("task_id: {}", response.task_id);
 

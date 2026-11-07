@@ -63,23 +63,9 @@ use worldlabs_consumer_client::credentials::world_labs_cookies::WorldLabsCookies
 use worldlabs_consumer_client::credentials::worldlabs_refresh_token::WorldLabsRefreshToken;
 
 #[deprecated(note = "Retained to poll legacy direct-provider tasks; new generations use ArtCraft.")]
-pub async fn worldlabs_marble_task_polling(
-  app_handle: AppHandle,
-  app_env_configs: AppEnvConfigs,
-  app_data_root: AppDataRoot,
-  task_database: TaskDatabase,
-  creds: WorldlabsCredentialManager,
-  storyteller_creds_manager: StorytellerCredentialManager,
-) -> ! {
+pub async fn worldlabs_marble_task_polling(app_handle: AppHandle, app_env_configs: AppEnvConfigs, app_data_root: AppDataRoot, task_database: TaskDatabase, creds: WorldlabsCredentialManager, storyteller_creds_manager: StorytellerCredentialManager) -> ! {
   loop {
-    let res = polling_loop(
-      &app_handle,
-      &app_env_configs,
-      &app_data_root,
-      &task_database,
-      &creds,
-      &storyteller_creds_manager,
-    ).await;
+    let res = polling_loop(&app_handle, &app_env_configs, &app_data_root, &task_database, &creds, &storyteller_creds_manager).await;
     if let Err(err) = res {
       error!("An error occurred: {:?}", err);
     }
@@ -109,7 +95,7 @@ async fn polling_loop(
         error!("No Storyteller credentials found. Cannot proceed with WorldLabs polling.");
         tokio::time::sleep(Duration::from_millis(5_000)).await;
         continue;
-      }
+      },
     };
 
     let world_labs_cookies = match worldlabs_creds.maybe_copy_typed_cookies()? {
@@ -118,7 +104,7 @@ async fn polling_loop(
         info!("No full WorldLabs cookies");
         tokio::time::sleep(Duration::from_millis(30_000)).await;
         continue;
-      }
+      },
     };
 
     let world_labs_bearer = match worldlabs_creds.maybe_copy_bearer_token()? {
@@ -127,7 +113,7 @@ async fn polling_loop(
         info!("No full WorldLabs bearer");
         tokio::time::sleep(Duration::from_millis(30_000)).await;
         continue;
-      }
+      },
     };
 
     let world_labs_refresh = match worldlabs_creds.maybe_copy_refresh_token()? {
@@ -136,26 +122,12 @@ async fn polling_loop(
         info!("No full WorldLabs refresh");
         tokio::time::sleep(Duration::from_millis(30_000)).await;
         continue;
-      }
+      },
     };
 
-    let local_tasks = list_tasks_by_provider_and_status(ListTasksByProviderAndStatusArgs {
-      db: task_database.get_connection(),
-      provider: GenerationProvider::WorldLabs,
-      task_statuses: &TASK_DATABASE_PENDING_STATUSES,
-    }).await?;
+    let local_tasks = list_tasks_by_provider_and_status(ListTasksByProviderAndStatusArgs { db: task_database.get_connection(), provider: GenerationProvider::WorldLabs, task_statuses: &TASK_DATABASE_PENDING_STATUSES }).await?;
 
-    poll_grok_tasks(
-      app_handle,
-      app_env_configs,
-      app_data_root,
-      task_database,
-      &world_labs_cookies,
-      &world_labs_bearer,
-      &world_labs_refresh,
-      &storyteller_creds,
-      local_tasks,
-    ).await?;
+    poll_grok_tasks(app_handle, app_env_configs, app_data_root, task_database, &world_labs_cookies, &world_labs_bearer, &world_labs_refresh, &storyteller_creds, local_tasks).await?;
 
     tokio::time::sleep(Duration::from_millis(2_000)).await;
   }
@@ -175,31 +147,18 @@ async fn poll_grok_tasks(
   let local_tasks = local_tasks.tasks;
 
   if local_tasks.is_empty() {
-    return Ok(())
+    return Ok(());
   }
 
   info!("WorldLabs tasks waiting: {:?}", local_tasks.len());
 
   // Map of WorldLabs World ID to Local Task.
-  let local_tasks_by_world_labs_world_id = local_tasks.iter()
-      .filter_map(|task| {
-        if let Some(provider_job_id) = &task.provider_job_id {
-          Some((provider_job_id.clone(), task.clone()))
-        } else {
-          None
-        }
-      })
-      .collect::<HashMap<String, Task>>();
+  let local_tasks_by_world_labs_world_id = local_tasks.iter().filter_map(|task| if let Some(provider_job_id) = &task.provider_job_id { Some((provider_job_id.clone(), task.clone())) } else { None }).collect::<HashMap<String, Task>>();
 
   for (world_id, local_task) in local_tasks_by_world_labs_world_id.iter() {
     let world_id = WorldObjectId(world_id.to_string());
 
-    let poll_world_response = poll_world_status(PollWorldStatusArgs {
-      cookies: &world_labs_cookies,
-      bearer_token: &world_labs_bearer,
-      world_id: &world_id,
-      request_timeout: None,
-    }).await?;
+    let poll_world_response = poll_world_status(PollWorldStatusArgs { cookies: &world_labs_cookies, bearer_token: &world_labs_bearer, world_id: &world_id, request_timeout: None }).await?;
 
     if !poll_world_response.is_complete {
       tokio::time::sleep(Duration::from_millis(2_000)).await;
@@ -211,18 +170,10 @@ async fn poll_grok_tasks(
       None => {
         error!("No spz splat URL despite being marked complete");
         continue;
-      }
+      },
     };
 
-    upload_spz_splat(
-      &app_handle,
-      &app_env_configs,
-      app_data_root,
-      task_database,
-      &storyteller_creds,
-      &local_task,
-      &spz_url,
-    ).await?;
+    upload_spz_splat(&app_handle, &app_env_configs, app_data_root, task_database, &storyteller_creds, &local_task, &spz_url).await?;
   }
 
   tokio::time::sleep(Duration::from_millis(5_000)).await;
@@ -230,16 +181,7 @@ async fn poll_grok_tasks(
   Ok(())
 }
 
-async fn upload_spz_splat(
-  app_handle: &AppHandle,
-  app_env_configs: &AppEnvConfigs,
-  app_data_root: &AppDataRoot,
-  task_database: &TaskDatabase,
-  storyteller_creds: &StorytellerCredentialSet,
-  local_task: &Task,
-  spz_url: &str,
-) -> AnyhowResult<()> {
-
+async fn upload_spz_splat(app_handle: &AppHandle, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds: &StorytellerCredentialSet, local_task: &Task, spz_url: &str) -> AnyhowResult<()> {
   let mut maybe_primary_media_file_token = None;
 
   info!("Downloading generated spz splat ...");
@@ -268,7 +210,8 @@ async fn upload_spz_splat(
       maybe_creds: Some(&storyteller_creds),
       path: &spz_download_filename,
       maybe_generation_provider: Some(GenerationProvider::WorldLabs),
-    }).await;
+    })
+    .await;
 
     match result {
       Ok(result) => {
@@ -287,10 +230,10 @@ async fn upload_spz_splat(
         }
         tokio::time::sleep(Duration::from_secs(wait_delay)).await;
         continue; // Retry the upload.
-      }
+      },
       Err(err) => {
         error!("Failed to upload to backend: {:?}", err);
-        return Err(err.into())
+        return Err(err.into());
       },
     }
   } // End loop
@@ -301,19 +244,15 @@ async fn upload_spz_splat(
   if let Some(media_file_token) = maybe_primary_media_file_token.as_ref() {
     info!("Looking up file to grab CDN and thumbnail URLs: {:?} ...", media_file_token);
 
-    let lookup_result = get_media_file(
-      &app_env_configs.storyteller_host,
-      media_file_token,
-    ).await;
+    let lookup_result = get_media_file(&app_env_configs.storyteller_host, media_file_token).await;
     match lookup_result {
       Ok(response) => {
         maybe_cdn_url = Some(response.media_file.media_links.cdn_url.to_string());
-        maybe_thumbnail_url_template = media_links_to_thumbnail_template(&response.media_file.media_links)
-            .map(|s| s.to_string());
-      }
+        maybe_thumbnail_url_template = media_links_to_thumbnail_template(&response.media_file.media_links).map(|s| s.to_string());
+      },
       Err(err) => {
         error!("Failed to look up media file after upload: {:?} (failing open)", err);
-      }
+      },
     }
   }
 
@@ -327,7 +266,8 @@ async fn upload_spz_splat(
     maybe_primary_media_file_class: Some(TaskMediaFileClass::Dimensional),
     maybe_primary_media_file_thumbnail_url_template: maybe_thumbnail_url_template.as_deref(),
     maybe_primary_media_file_cdn_url: maybe_cdn_url.as_deref(),
-  }).await?;
+  })
+  .await?;
 
   if !updated {
     return Ok(()); // If anything breaks with queries, don't spam events.
@@ -360,10 +300,7 @@ async fn upload_spz_splat(
   Ok(())
 }
 
-async fn download_spz(
-  spz_url: &str,
-  app_data_root: &AppDataRoot,
-) -> AnyhowResult<PathBuf> {
+async fn download_spz(spz_url: &str, app_data_root: &AppDataRoot) -> AnyhowResult<PathBuf> {
   info!("Downloading splat from URL: {}", spz_url);
 
   let response = reqwest::get(spz_url).await?;

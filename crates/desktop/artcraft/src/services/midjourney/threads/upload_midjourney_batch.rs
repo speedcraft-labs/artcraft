@@ -47,7 +47,17 @@ struct MidjourneyUploadCheckpoint {
   uploaded: Vec<MediaFileToken>,
 }
 
-pub(super) async fn upload_midjourney_batch(maybe_app_handle: Option<&AppHandle>, app_env_configs: &AppEnvConfigs, app_data_root: &AppDataRoot, task_database: &TaskDatabase, storyteller_creds: &StorytellerCredentialSet, image_downloader: &ImageDownloaderClient, midjourney_job_id: &str, local_task: &Task, maybe_item: Option<&ImagineItem>) -> AnyhowResult<()> {
+pub(super) async fn upload_midjourney_batch(
+  maybe_app_handle: Option<&AppHandle>,
+  app_env_configs: &AppEnvConfigs,
+  app_data_root: &AppDataRoot,
+  task_database: &TaskDatabase,
+  storyteller_creds: &StorytellerCredentialSet,
+  image_downloader: &ImageDownloaderClient,
+  midjourney_job_id: &str,
+  local_task: &Task,
+  maybe_item: Option<&ImagineItem>,
+) -> AnyhowResult<()> {
   let mut checkpoint = MidjourneyUploadCheckpoint::load_or_create(app_data_root, local_task)?;
   let model_type = match local_task.model_type {
     Some(TaskModelType::Midjourney7) => CommonModelType::Midjourney7,
@@ -56,14 +66,41 @@ pub(super) async fn upload_midjourney_batch(maybe_app_handle: Option<&AppHandle>
     _ => model_type_from_feed(maybe_item),
   };
   if checkpoint.maybe_prompt_token.is_none() {
-    let request = CreatePromptRequest { uuid_idempotency_token: checkpoint.prompt_idempotency_token.clone(), positive_prompt: maybe_item.and_then(|item| item.full_command.clone()), negative_prompt: None, model_type: Some(model_type), generation_provider: Some(GenerationProvider::Midjourney), maybe_generation_mode: None, maybe_aspect_ratio: None, maybe_resolution: None, maybe_batch_count: Some(4), maybe_generate_audio: None, maybe_duration_seconds: None };
+    let request = CreatePromptRequest {
+      uuid_idempotency_token: checkpoint.prompt_idempotency_token.clone(),
+      positive_prompt: maybe_item.and_then(|item| item.full_command.clone()),
+      negative_prompt: None,
+      model_type: Some(model_type),
+      generation_provider: Some(GenerationProvider::Midjourney),
+      maybe_generation_mode: None,
+      maybe_aspect_ratio: None,
+      maybe_resolution: None,
+      maybe_batch_count: Some(4),
+      maybe_generate_audio: None,
+      maybe_duration_seconds: None,
+    };
     let prompt = tokio::time::timeout(REQUEST_TIMEOUT, create_prompt(&app_env_configs.storyteller_host, Some(storyteller_creds), request)).await??;
     checkpoint.maybe_prompt_token = Some(prompt.prompt_token);
     checkpoint.save(app_data_root, local_task)?;
   }
   for index in checkpoint.uploaded.len()..4 {
     let download_path = tokio::time::timeout(REQUEST_TIMEOUT, download_midjourney_image(image_downloader, midjourney_job_id, index as u8, app_data_root)).await??;
-    let result = tokio::time::timeout(REQUEST_TIMEOUT, upload_image_media_file_from_file_with_idempotency_token(UploadImageFromFileArgs { api_host: &app_env_configs.storyteller_host, maybe_creds: Some(storyteller_creds), path: &download_path, is_intermediate_system_file: false, maybe_prompt_token: checkpoint.maybe_prompt_token.as_ref(), maybe_batch_token: Some(&checkpoint.batch_token), maybe_generation_provider: Some(GenerationProvider::Midjourney) }, &checkpoint.upload_idempotency_tokens[index])).await??;
+    let result = tokio::time::timeout(
+      REQUEST_TIMEOUT,
+      upload_image_media_file_from_file_with_idempotency_token(
+        UploadImageFromFileArgs {
+          api_host: &app_env_configs.storyteller_host,
+          maybe_creds: Some(storyteller_creds),
+          path: &download_path,
+          is_intermediate_system_file: false,
+          maybe_prompt_token: checkpoint.maybe_prompt_token.as_ref(),
+          maybe_batch_token: Some(&checkpoint.batch_token),
+          maybe_generation_provider: Some(GenerationProvider::Midjourney),
+        },
+        &checkpoint.upload_idempotency_tokens[index],
+      ),
+    )
+    .await??;
     checkpoint.uploaded.push(result.media_file_token);
     // Resume at the next image if a later upload fails or the app restarts.
     checkpoint.save(app_data_root, local_task)?;
@@ -93,7 +130,16 @@ pub(super) async fn upload_midjourney_batch(maybe_app_handle: Option<&AppHandle>
     auto_download_task(app, local_task, Some(&batch_token), maybe_cdn_url.as_deref(), Some(checkpoint.uploaded.len())).await?;
   }
 
-  let updated = update_successful_task_status_with_metadata(UpdateSuccessfulTaskArgs { db: task_database.get_connection(), task_id: &local_task.id, maybe_batch_token: Some(&batch_token), maybe_primary_media_file_token: maybe_primary_media_file_token.as_ref(), maybe_primary_media_file_class: Some(TaskMediaFileClass::Image), maybe_primary_media_file_thumbnail_url_template: maybe_thumbnail_url_template.as_deref(), maybe_primary_media_file_cdn_url: maybe_cdn_url.as_deref() }).await?;
+  let updated = update_successful_task_status_with_metadata(UpdateSuccessfulTaskArgs {
+    db: task_database.get_connection(),
+    task_id: &local_task.id,
+    maybe_batch_token: Some(&batch_token),
+    maybe_primary_media_file_token: maybe_primary_media_file_token.as_ref(),
+    maybe_primary_media_file_class: Some(TaskMediaFileClass::Image),
+    maybe_primary_media_file_thumbnail_url_template: maybe_thumbnail_url_template.as_deref(),
+    maybe_primary_media_file_cdn_url: maybe_cdn_url.as_deref(),
+  })
+  .await?;
 
   if !updated {
     return Ok(()); // If anything breaks with queries, don't spam events.
@@ -133,7 +179,13 @@ impl MidjourneyUploadCheckpoint {
       checkpoint.save(root, task)?; // Backfill stable tokens for older checkpoints.
       return Ok(checkpoint);
     }
-    let checkpoint = Self { batch_token: BatchGenerationToken::generate(), prompt_idempotency_token: generate_random_uuid(), maybe_prompt_token: task.prompt_token.as_deref().map(PromptToken::new_from_str), upload_idempotency_tokens: upload_idempotency_tokens(), uploaded: Vec::new() };
+    let checkpoint = Self {
+      batch_token: BatchGenerationToken::generate(),
+      prompt_idempotency_token: generate_random_uuid(),
+      maybe_prompt_token: task.prompt_token.as_deref().map(PromptToken::new_from_str),
+      upload_idempotency_tokens: upload_idempotency_tokens(),
+      uploaded: Vec::new(),
+    };
     checkpoint.save(root, task)?;
     Ok(checkpoint)
   }
@@ -197,6 +249,19 @@ mod tests {
   }
 
   fn task() -> Task {
-    Task { id: TaskId::generate(), status: TaskStatus::Pending, task_type: TaskType::ImageGeneration, model_type: Some(TaskModelType::Midjourney8), provider: GenerationProvider::Midjourney, provider_job_id: Some("test-job".to_string()), queue_status_url: None, queue_response_url: None, prompt_token: Some("prompt_test".to_string()), frontend_caller: None, frontend_subscriber_id: None, frontend_subscriber_payload: None }
+    Task {
+      id: TaskId::generate(),
+      status: TaskStatus::Pending,
+      task_type: TaskType::ImageGeneration,
+      model_type: Some(TaskModelType::Midjourney8),
+      provider: GenerationProvider::Midjourney,
+      provider_job_id: Some("test-job".to_string()),
+      queue_status_url: None,
+      queue_response_url: None,
+      prompt_token: Some("prompt_test".to_string()),
+      frontend_caller: None,
+      frontend_subscriber_id: None,
+      frontend_subscriber_payload: None,
+    }
   }
 }

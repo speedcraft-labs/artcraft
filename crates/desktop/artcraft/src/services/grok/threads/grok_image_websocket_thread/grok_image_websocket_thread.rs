@@ -54,15 +54,7 @@ pub async fn grok_image_websocket_thread(
   storyteller_creds_manager: StorytellerCredentialManager,
 ) -> ! {
   loop {
-    let res = inner_loop(
-      &app_handle,
-      &app_env_configs,
-      &app_data_root,
-      &task_database,
-      &creds,
-      &prompt_queue,
-      &storyteller_creds_manager,
-    ).await;
+    let res = inner_loop(&app_handle, &app_env_configs, &app_data_root, &task_database, &creds, &prompt_queue, &storyteller_creds_manager).await;
     if let Err(err) = res {
       error!("An error occurred: {:?}", err);
     }
@@ -80,7 +72,6 @@ async fn inner_loop(
   prompt_queue: &GrokImagePromptQueue,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> AnyhowResult<()> {
-
   loop {
     if !grok_creds.do_task_polling()? {
       tokio::time::sleep(std::time::Duration::from_millis(10_000)).await;
@@ -107,9 +98,7 @@ async fn inner_loop(
     //  }
     //};
 
-    let websocket = create_listen_websocket(CreateListenWebsocketArgs {
-      cookies: cookies.as_str(),
-    }).await?;
+    let websocket = create_listen_websocket(CreateListenWebsocketArgs { cookies: cookies.as_str() }).await?;
 
     let mut websocket = GrokWebsocket::new(websocket);
 
@@ -121,39 +110,22 @@ async fn inner_loop(
         None => {
           tokio::time::sleep(std::time::Duration::from_millis(1_000)).await;
           continue;
-        }
+        },
       };
 
       info!("Prompt received over in-memory queue. Prompting Grok websocket: {}", prompt_item.prompt);
 
-      let result = prompt_websocket_image_with_retry(PromptWebsocketImageWithRetryArgs {
-        websocket: &mut websocket,
-        prompt: &prompt_item.prompt,
-        aspect_ratio: prompt_item.aspect_ratio,
-        cookies: &cookies,
-      }).await?;
+      let result = prompt_websocket_image_with_retry(PromptWebsocketImageWithRetryArgs { websocket: &mut websocket, prompt: &prompt_item.prompt, aspect_ratio: prompt_item.aspect_ratio, cookies: &cookies }).await?;
 
       if let Some(new_websocket) = result.maybe_new_websocket {
         info!("Replacing websocket with new one...");
         websocket = new_websocket;
       }
 
-      let images = listen_for_websocket_images(ListenForWebsocketImagesArgs {
-        websocket: &mut websocket,
-        timeout: Duration::from_millis(30_000),
-      }).await?;
+      let images = listen_for_websocket_images(ListenForWebsocketImagesArgs { websocket: &mut websocket, timeout: Duration::from_millis(30_000) }).await?;
 
-      upload_images_to_storyteller(
-        &app_handle,
-        &app_env_configs,
-        &app_data_root,
-        &task_database,
-        &storyteller_creds_manager,
-        &prompt_item,
-        &images,
-      ).await?
+      upload_images_to_storyteller(&app_handle, &app_env_configs, &app_data_root, &task_database, &storyteller_creds_manager, &prompt_item, &images).await?
     }
-
   }
 }
 
@@ -166,7 +138,6 @@ async fn upload_images_to_storyteller(
   prompt_item: &PromptItem,
   images: &ImageResults,
 ) -> AnyhowResult<()> {
-
   loop {
     let storyteller_creds = match storyteller_creds_manager.get_credentials()? {
       Some(creds) => creds,
@@ -174,7 +145,7 @@ async fn upload_images_to_storyteller(
         error!("No Storyteller credentials found. Cannot proceed with Grok polling.");
         tokio::time::sleep(std::time::Duration::from_millis(5_000)).await;
         continue;
-      }
+      },
     };
 
     let prompt = prompt_item.prompt.trim().to_string();
@@ -190,13 +161,10 @@ async fn upload_images_to_storyteller(
       maybe_resolution: None,
       maybe_batch_count: None,
       maybe_generate_audio: None,
-    maybe_duration_seconds: None,    };
+      maybe_duration_seconds: None,
+    };
 
-    let prompt_response = create_prompt(
-      &app_env_configs.storyteller_host,
-      Some(&storyteller_creds),
-      request
-    ).await?;
+    let prompt_response = create_prompt(&app_env_configs.storyteller_host, Some(&storyteller_creds), request).await?;
 
     info!("Created prompt: {:?}", &prompt_response.prompt_token);
 
@@ -221,7 +189,8 @@ async fn upload_images_to_storyteller(
           maybe_prompt_token: Some(&prompt_response.prompt_token),
           maybe_batch_token: Some(&batch_token),
           maybe_generation_provider: Some(GenerationProvider::Grok),
-        }).await;
+        })
+        .await;
 
         match result {
           Ok(uploaded) => {
@@ -229,15 +198,15 @@ async fn upload_images_to_storyteller(
               maybe_primary_media_file_token = Some(uploaded.media_file_token);
             }
             break; // Break retry loop.
-          }
+          },
           Err(StorytellerError::Api(ApiError::TooManyRequests(_))) => {
             tokio::time::sleep(std::time::Duration::from_millis(10_000)).await;
             continue;
-          }
+          },
           Err(err) => {
             error!("Error uploading image: {}", err);
             break;
-          }
+          },
         }
       } // Retry on 429s, etc.
     }
@@ -249,18 +218,14 @@ async fn upload_images_to_storyteller(
       model: None,
     };
 
-    let task = get_task_by_provider_and_provider_job_id(GetTaskByProviderAndProviderJobIdArgs {
-      db: task_database.get_connection(),
-      provider: GenerationProvider::Grok,
-      provider_job_id: &prompt_item.task_id,
-    }).await?;
+    let task = get_task_by_provider_and_provider_job_id(GetTaskByProviderAndProviderJobIdArgs { db: task_database.get_connection(), provider: GenerationProvider::Grok, provider_job_id: &prompt_item.task_id }).await?;
 
     let task = match task {
       Some(task) => task,
       None => {
         warn!("Couldn't find local sqlite task by id: {}", &prompt_item.task_id);
         return Ok(());
-      }
+      },
     };
 
     let mut maybe_cdn_url = None;
@@ -269,19 +234,15 @@ async fn upload_images_to_storyteller(
     if let Some(media_file_token) = maybe_primary_media_file_token.as_ref() {
       info!("Looking up file to grab CDN and thumbnail URLs: {:?} ...", media_file_token);
 
-      let lookup_result = get_media_file(
-        &app_env_configs.storyteller_host,
-        media_file_token,
-      ).await;
+      let lookup_result = get_media_file(&app_env_configs.storyteller_host, media_file_token).await;
       match lookup_result {
         Ok(response) => {
           maybe_cdn_url = Some(response.media_file.media_links.cdn_url.to_string());
-          maybe_thumbnail_url_template = media_links_to_thumbnail_template(&response.media_file.media_links)
-              .map(|s| s.to_string());
-        }
+          maybe_thumbnail_url_template = media_links_to_thumbnail_template(&response.media_file.media_links).map(|s| s.to_string());
+        },
         Err(err) => {
           error!("Failed to look up media file after upload: {:?} (failing open)", err);
-        }
+        },
       }
     }
 
@@ -295,7 +256,8 @@ async fn upload_images_to_storyteller(
       maybe_primary_media_file_class: Some(TaskMediaFileClass::Image),
       maybe_primary_media_file_thumbnail_url_template: maybe_thumbnail_url_template.as_deref(),
       maybe_primary_media_file_cdn_url: maybe_cdn_url.as_deref(),
-    }).await?;
+    })
+    .await?;
 
     if !updated {
       return Ok(()); // If anything breaks with queries, don't spam events.
@@ -303,50 +265,22 @@ async fn upload_images_to_storyteller(
 
     clear_auto_download_checkpoint(app_handle, &task);
     event.send_infallible(app_handle);
-    send_frontend_ui_update(
-      app_handle,
-      app_env_configs,
-      Some(&storyteller_creds),
-      &task,
-      &batch_token,
-    ).await?;
+    send_frontend_ui_update(app_handle, app_env_configs, Some(&storyteller_creds), &task, &batch_token).await?;
 
-    return Ok(())
+    return Ok(());
   }
 }
 
-async fn send_frontend_ui_update(
-  app: &AppHandle,
-  app_env_configs: &AppEnvConfigs,
-  maybe_creds: Option<&StorytellerCredentialSet>,
-  task: &Task,
-  batch_token: &BatchGenerationToken,
-) -> AnyhowResult<()> {
-
-  let result = list_batch_generated_redux_media_files(
-    &app_env_configs.storyteller_host,
-    maybe_creds,
-    batch_token,
-  ).await?;
+async fn send_frontend_ui_update(app: &AppHandle, app_env_configs: &AppEnvConfigs, maybe_creds: Option<&StorytellerCredentialSet>, task: &Task, batch_token: &BatchGenerationToken) -> AnyhowResult<()> {
+  let result = list_batch_generated_redux_media_files(&app_env_configs.storyteller_host, maybe_creds, batch_token).await?;
 
   if result.media_files.is_empty() {
     return Err(anyhow!("No media files found for batch token: {}", batch_token));
   }
 
-  let media_files = result.media_files
-      .into_iter()
-      .map(|file| GeneratedImage {
-        media_token: file.token,
-        cdn_url: file.media_links.cdn_url,
-        maybe_thumbnail_template: file.media_links.maybe_thumbnail_template,
-      })
-      .collect();
+  let media_files = result.media_files.into_iter().map(|file| GeneratedImage { media_token: file.token, cdn_url: file.media_links.cdn_url, maybe_thumbnail_template: file.media_links.maybe_thumbnail_template }).collect();
 
-  let event = TextToImageGenerationCompleteEvent {
-    generated_images: media_files,
-    maybe_frontend_subscriber_id: task.frontend_subscriber_id.clone(),
-    maybe_frontend_subscriber_payload: task.frontend_subscriber_payload.clone(),
-  };
+  let event = TextToImageGenerationCompleteEvent { generated_images: media_files, maybe_frontend_subscriber_id: task.frontend_subscriber_id.clone(), maybe_frontend_subscriber_payload: task.frontend_subscriber_payload.clone() };
 
   event.send_infallible(app);
 

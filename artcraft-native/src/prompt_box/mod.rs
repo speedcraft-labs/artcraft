@@ -155,7 +155,16 @@ pub fn show(ui: &mut Ui, prompt: &mut String, refs: &References, state: &mut Pro
 
 fn editor_ui(ui: &mut Ui, prompt: &mut String, state: &mut PromptBoxState, props: &PromptBoxProps<'_>, cache: &mut MediaCache, fixed_height: Option<f32>) -> editor::EditorOutput {
   let fullscreen = fixed_height.is_some();
-  let opts = EditorOptions { id: if fullscreen { props.id.with("focus-editor") } else { props.id.with("editor") }, placeholder: props.placeholder, enter_to_generate: props.enter_to_generate, mentions: props.mentions, max_length: if fullscreen { None } else { props.max_length }, fixed_height, fullscreen_button: !fullscreen, resizable: !fullscreen };
+  let opts = EditorOptions {
+    id: if fullscreen { props.id.with("focus-editor") } else { props.id.with("editor") },
+    placeholder: props.placeholder,
+    enter_to_generate: props.enter_to_generate,
+    mentions: props.mentions,
+    max_length: if fullscreen { None } else { props.max_length },
+    fixed_height,
+    fullscreen_button: !fullscreen,
+    resizable: !fullscreen,
+  };
   let ctx = ui.ctx().clone();
   editor::show(ui, prompt, &mut state.editor, &opts, &mut |_, key| match cache.get(&ctx, key) {
     crate::backend::media_cache::Lookup::Ready(t) => Some(t),

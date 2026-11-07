@@ -116,7 +116,8 @@ impl Page {
   }
 }
 
-const SECTIONS: [(&str, &[Page]); 3] = [("Create", &[Page::CreateImage, Page::CreateVideo, Page::CreateAudio, Page::Object3d, Page::World3d]), ("Studio", &[Page::EditImage, Page::Stage3d, Page::VideoEditor, Page::RemoveBackground, Page::FrameExtractor]), ("Assets", &[Page::Library])];
+const SECTIONS: [(&str, &[Page]); 3] =
+  [("Create", &[Page::CreateImage, Page::CreateVideo, Page::CreateAudio, Page::Object3d, Page::World3d]), ("Studio", &[Page::EditImage, Page::Stage3d, Page::VideoEditor, Page::RemoveBackground, Page::FrameExtractor]), ("Assets", &[Page::Library])];
 
 /// Who's signed in, for the sidebar and top bar.
 pub struct Account<'a> {

@@ -241,7 +241,12 @@ impl VideoPlayer {
 
   fn spawn(&mut self, info: VideoInfo, start: f64) -> Result<Stream, String> {
     let (w, h) = output_size(info);
-    let mut video = command("ffmpeg").args(["-nostdin", "-loglevel", "error", "-ss", &format!("{start:.3}"), "-i", &self.url, "-an", "-vf", &format!("scale={w}:{h}"), "-f", "rawvideo", "-pix_fmt", "rgba", "-"]).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().map_err(|e| format!("ffmpeg: {e}"))?;
+    let mut video = command("ffmpeg")
+      .args(["-nostdin", "-loglevel", "error", "-ss", &format!("{start:.3}"), "-i", &self.url, "-an", "-vf", &format!("scale={w}:{h}"), "-f", "rawvideo", "-pix_fmt", "rgba", "-"])
+      .stdout(Stdio::piped())
+      .stderr(Stdio::null())
+      .spawn()
+      .map_err(|e| format!("ffmpeg: {e}"))?;
     let stdout = video.stdout.take().ok_or("ffmpeg has no output")?;
     let (frame_tx, frame_rx) = sync_channel(FRAME_QUEUE);
     let fps = info.fps.max(1.0);
@@ -253,7 +258,8 @@ impl VideoPlayer {
 
   /// The soundtrack as PCM into rodio (silently skipped when the clip has none).
   fn spawn_audio(&mut self, start: f64, children: &mut Vec<Child>) -> Option<Sink> {
-    let mut audio = command("ffmpeg").args(["-nostdin", "-loglevel", "error", "-ss", &format!("{start:.3}"), "-i", &self.url, "-vn", "-ac", "2", "-ar", &AUDIO_RATE.to_string(), "-f", "s16le", "-"]).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
+    let mut audio =
+      command("ffmpeg").args(["-nostdin", "-loglevel", "error", "-ss", &format!("{start:.3}"), "-i", &self.url, "-vn", "-ac", "2", "-ar", &AUDIO_RATE.to_string(), "-f", "s16le", "-"]).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
     let mut stdout = audio.stdout.take()?;
     children.push(audio);
     if self.output.is_none() {
@@ -349,7 +355,10 @@ fn probe(url: &str) -> Result<VideoInfo, String> {
   struct ProbeFormat {
     duration: String,
   }
-  let out = command("ffprobe").args(["-v", "error", "-probesize", "65536", "-analyzeduration", "0", "-select_streams", "v:0", "-show_entries", "stream=width,height,avg_frame_rate:format=duration", "-of", "json", url]).output().map_err(|e| format!("ffprobe: {e}"))?;
+  let out = command("ffprobe")
+    .args(["-v", "error", "-probesize", "65536", "-analyzeduration", "0", "-select_streams", "v:0", "-show_entries", "stream=width,height,avg_frame_rate:format=duration", "-of", "json", url])
+    .output()
+    .map_err(|e| format!("ffprobe: {e}"))?;
   let probe: Probe = serde_json::from_slice(&out.stdout).map_err(|e| format!("ffprobe: {e}"))?;
   let stream = probe.streams.first().ok_or("no video stream")?;
   let fps = match stream.avg_frame_rate.split_once('/') {

@@ -17,13 +17,13 @@ pub struct AppPreferencesPayload {
   pub preferred_download_directory: PreferredDownloadDirectory,
   pub preferred_download_filename: PreferredDownloadFilename,
   pub auto_download: bool,
-  
+
   /// Play sounds on events.
   pub play_sounds: bool,
 
   /// Key pointing to file; defined in the frontend code.
   pub delete_file_sound: Option<String>,
-  
+
   /// Key pointing to file; defined in the frontend code.
   /// Defined for enqueue since image enqueue can be async
   pub enqueue_success_sound: Option<String>,
@@ -43,23 +43,16 @@ pub struct AppPreferencesPayload {
   pub generation_enqueue_sound: Option<String>,
 }
 
-
 #[tauri::command]
-pub async fn get_app_preferences_command(
-  app_prefs: State<'_, AppPreferencesManager>,
-) -> Result<GetAppPreferencesResponse, String> {
+pub async fn get_app_preferences_command(app_prefs: State<'_, AppPreferencesManager>) -> Result<GetAppPreferencesResponse, String> {
   info!("get_app_preferences_command called");
 
-  let result = get_prefs(&app_prefs)
-      .await
-      .map_err(|err| {
-        error!("Error getting app preferences: {:?}", err);
-        format!("Error getting app preferences: {:?}", err)
-      })?;
+  let result = get_prefs(&app_prefs).await.map_err(|err| {
+    error!("Error getting app preferences: {:?}", err);
+    format!("Error getting app preferences: {:?}", err)
+  })?;
 
-  Ok(GetAppPreferencesResponse {
-    preferences: result,
-  })
+  Ok(GetAppPreferencesResponse { preferences: result })
 }
 
 async fn get_prefs(app_prefs: &AppPreferencesManager) -> AnyhowResult<AppPreferencesPayload> {

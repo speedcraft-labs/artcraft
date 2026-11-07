@@ -14,18 +14,10 @@ use crate::core::commands::generate::generate_image::tauri_generate_image_reques
 use crate::core::commands::generate::generate_image::utils::parse_semantic_media_files::SemanticMediaFiles;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 
-pub async fn handle_artcraft_via_omni_endpoint(
-  request: &TauriGenerateImageRequest,
-  semantic_media_files: &SemanticMediaFiles,
-  creds: &StorytellerCredentialSet,
-  app_env_configs: &AppEnvConfigs,
-) -> Result<TaskEnqueueSuccess, GenerateError> {
+pub async fn handle_artcraft_via_omni_endpoint(request: &TauriGenerateImageRequest, semantic_media_files: &SemanticMediaFiles, creds: &StorytellerCredentialSet, app_env_configs: &AppEnvConfigs) -> Result<TaskEnqueueSuccess, GenerateError> {
   let tauri_model = request.model.ok_or(GenerateError::no_model_specified())?;
 
-  let omni_api_model = tauri_image_model_to_enums_model(tauri_model)
-    .ok_or(GenerateError::NotYetImplemented(
-      format!("Model {:?} is not supported via the omni endpoint", tauri_model),
-    ))?;
+  let omni_api_model = tauri_image_model_to_enums_model(tauri_model).ok_or(GenerateError::NotYetImplemented(format!("Model {:?} is not supported via the omni endpoint", tauri_model)))?;
 
   let uuid_idempotency_token = generate_random_uuid();
 
@@ -47,11 +39,7 @@ pub async fn handle_artcraft_via_omni_endpoint(
 
   info!("Sending image generation via omni endpoint: model={:?}", omni_api_model);
 
-  let response = omni_gen_image_generate(
-    &app_env_configs.storyteller_host,
-    Some(creds),
-    omni_request,
-  ).await.map_err(|err| {
+  let response = omni_gen_image_generate(&app_env_configs.storyteller_host, Some(creds), omni_request).await.map_err(|err| {
     error!("Omni image generation failed: {:?}", err);
     GenerateError::from(err)
   })?;
@@ -71,13 +59,8 @@ pub async fn handle_artcraft_via_omni_endpoint(
   })
 }
 
-fn get_image_media_tokens(
-  request: &TauriGenerateImageRequest,
-  semantic_media_files: &SemanticMediaFiles,
-) -> Option<Vec<MediaFileToken>> {
-  let num_images = request.image_media_tokens.as_deref()
-      .map(|t| t.len())
-      .unwrap_or(0);
+fn get_image_media_tokens(request: &TauriGenerateImageRequest, semantic_media_files: &SemanticMediaFiles) -> Option<Vec<MediaFileToken>> {
+  let num_images = request.image_media_tokens.as_deref().map(|t| t.len()).unwrap_or(0);
 
   let mut image_media_tokens = Vec::with_capacity(num_images + 2);
 

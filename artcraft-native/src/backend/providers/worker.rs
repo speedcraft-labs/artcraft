@@ -193,7 +193,8 @@ impl Worker {
       // The token is saved before the upload, so a retry can't upload the same result twice.
       let token = job.upload_token(index);
       self.jobs.put(job.clone());
-      let args = UploadImageFromFileArgs { api_host: &self.host, maybe_creds: Some(creds), path: file.path(), is_intermediate_system_file: false, maybe_prompt_token: prompt.as_ref(), maybe_generation_provider: Some(provider), maybe_batch_token: Some(&batch) };
+      let args =
+        UploadImageFromFileArgs { api_host: &self.host, maybe_creds: Some(creds), path: file.path(), is_intermediate_system_file: false, maybe_prompt_token: prompt.as_ref(), maybe_generation_provider: Some(provider), maybe_batch_token: Some(&batch) };
       let uploaded = timeout(TRANSFER_TIMEOUT, upload_image_media_file_from_file_with_idempotency_token(args, &token)).await??;
       job.uploaded.push(uploaded.media_file_token.to_string());
       self.jobs.put(job.clone());

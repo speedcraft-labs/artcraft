@@ -63,7 +63,20 @@ impl FeedStore {
       self.meta.insert(token.clone(), meta.clone());
       self.seen_running.insert(token.clone());
       if !self.pending.iter().any(|p| &p.job_token == token) {
-        self.pending.insert(0, PendingJob { job_token: token.clone(), kind, prompt: meta.prompt.clone(), model_id: Some(meta.model_id.clone()), created_at: now, server_progress: None, expected_secs: expected, batch_count: meta.batch_count, local: meta.provider != Provider::Artcraft });
+        self.pending.insert(
+          0,
+          PendingJob {
+            job_token: token.clone(),
+            kind,
+            prompt: meta.prompt.clone(),
+            model_id: Some(meta.model_id.clone()),
+            created_at: now,
+            server_progress: None,
+            expected_secs: expected,
+            batch_count: meta.batch_count,
+            local: meta.provider != Provider::Artcraft,
+          },
+        );
       }
     }
   }
@@ -84,7 +97,17 @@ impl FeedStore {
         JobPhase::Running => {
           self.seen_running.insert(job.job_token.clone());
           let expected = model_id.as_deref().and_then(|id| catalog.find(id)).map_or_else(|| models::expected_secs(model_id.as_deref().unwrap_or_default(), kind), |m| m.expected_secs);
-          pending.push(PendingJob { job_token: job.job_token.clone(), kind, prompt, model_id, created_at: unix_secs(&job.created_at), server_progress: Some(job.status.progress_percentage), expected_secs: expected, batch_count: meta.map_or(1, |m| m.batch_count), local: false });
+          pending.push(PendingJob {
+            job_token: job.job_token.clone(),
+            kind,
+            prompt,
+            model_id,
+            created_at: unix_secs(&job.created_at),
+            server_progress: Some(job.status.progress_percentage),
+            expected_secs: expected,
+            batch_count: meta.map_or(1, |m| m.batch_count),
+            local: false,
+          });
         },
         JobPhase::Failed => {
           let updated = unix_secs(&job.updated_at);
@@ -92,7 +115,16 @@ impl FeedStore {
             notices.push(FeedNotice::Failed(job.status.maybe_failure_message.clone().unwrap_or_else(|| job.status.failure_reason())));
           }
           if now - updated <= FAILURE_WINDOW_SECS {
-            failed.push(FailedJob { job_token: job.job_token.clone(), prompt, model_id, updated_at: updated, reason: job.status.failure_reason(), message: job.status.maybe_failure_message.clone().filter(|_| job.status.maybe_failure_category_updated.as_deref() != Some("unknown")), ref_image: meta.and_then(|m| m.ref_image.clone()), local: false });
+            failed.push(FailedJob {
+              job_token: job.job_token.clone(),
+              prompt,
+              model_id,
+              updated_at: updated,
+              reason: job.status.failure_reason(),
+              message: job.status.maybe_failure_message.clone().filter(|_| job.status.maybe_failure_category_updated.as_deref() != Some("unknown")),
+              ref_image: meta.and_then(|m| m.ref_image.clone()),
+              local: false,
+            });
           }
         },
         JobPhase::Succeeded => {
@@ -108,7 +140,19 @@ impl FeedStore {
           // The finished card takes the pending card's place: date it by the job.
           let created_at = unix_secs(&job.created_at);
           let thumbnail = result.media_links.thumbnail(THUMBNAIL_WIDTH).filter(|_| kind != MediaKind::Audio);
-          self.push_item(FeedItem { token: result.entity_token.clone(), kind, title: None, thumbnail, full_url: result.media_links.cdn_url.clone(), created_at, model_id: model_id.clone(), prompt_token: job.request.maybe_prompt_token.clone(), batch_token: result.maybe_batch_token.clone(), duration_secs: None, animated: result.media_links.animated_preview(ANIMATED_WIDTH) });
+          self.push_item(FeedItem {
+            token: result.entity_token.clone(),
+            kind,
+            title: None,
+            thumbnail,
+            full_url: result.media_links.cdn_url.clone(),
+            created_at,
+            model_id: model_id.clone(),
+            prompt_token: job.request.maybe_prompt_token.clone(),
+            batch_token: result.maybe_batch_token.clone(),
+            duration_secs: None,
+            animated: result.media_links.animated_preview(ANIMATED_WIDTH),
+          });
           if let Some(batch) = &result.maybe_batch_token {
             notices.push(FeedNotice::LoadBatch { job_token: job.job_token.clone(), batch_token: batch.clone() });
           }
@@ -149,7 +193,17 @@ impl FeedStore {
     for job in jobs {
       if !self.pending.iter().any(|p| p.job_token == job.id) {
         let expected = catalog.find(&job.model_id).map_or_else(|| models::expected_secs(&job.model_id, MediaKind::Image), |m| m.expected_secs);
-        self.pending.push(PendingJob { job_token: job.id.clone(), kind: MediaKind::Image, prompt: job.prompt.clone(), model_id: Some(job.model_id.clone()), created_at: job.created_at, server_progress: None, expected_secs: expected, batch_count: job.batch_count, local: true });
+        self.pending.push(PendingJob {
+          job_token: job.id.clone(),
+          kind: MediaKind::Image,
+          prompt: job.prompt.clone(),
+          model_id: Some(job.model_id.clone()),
+          created_at: job.created_at,
+          server_progress: None,
+          expected_secs: expected,
+          batch_count: job.batch_count,
+          local: true,
+        });
       }
     }
     self.pending.sort_by_key(|p| std::cmp::Reverse(p.created_at));
@@ -169,7 +223,19 @@ impl FeedStore {
       return false;
     };
     let p = self.pending.remove(i);
-    self.failed.insert(0, FailedJob { job_token: p.job_token, prompt: p.prompt, model_id: p.model_id, updated_at: chrono::Utc::now().timestamp(), reason: "Generation failed".to_owned(), message: Some(reason.to_owned()), ref_image: self.meta.get(job_id).and_then(|m| m.ref_image.clone()), local: true });
+    self.failed.insert(
+      0,
+      FailedJob {
+        job_token: p.job_token,
+        prompt: p.prompt,
+        model_id: p.model_id,
+        updated_at: chrono::Utc::now().timestamp(),
+        reason: "Generation failed".to_owned(),
+        message: Some(reason.to_owned()),
+        ref_image: self.meta.get(job_id).and_then(|m| m.ref_image.clone()),
+        local: true,
+      },
+    );
     true
   }
 

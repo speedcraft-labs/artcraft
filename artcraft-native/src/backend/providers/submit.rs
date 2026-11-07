@@ -122,11 +122,40 @@ fn request_builder(provider: RouterProvider, fields: &Map<String, Value>, image_
     (None, id) => return Err(format!("{id} isn't available on this provider")),
   };
   let mismatch = if matches!(provider, RouterProvider::Midjourney) { GenerationModeMismatchStrategy::AbortGeneration } else { GenerationModeMismatchStrategy::GenerateAnyway };
-  Ok(GenerateImageRequestBuilder { model, provider, prompt: fields.get("prompt").and_then(Value::as_str).map(str::to_owned), image_inputs: (!image_urls.is_empty()).then_some(ImageListRef::Urls(image_urls)), resolution: parse(fields.get("resolution")), aspect_ratio: parse(fields.get("aspect_ratio")), quality: parse(fields.get("quality")), image_batch_count: fields.get("image_batch_count").and_then(Value::as_u64).map(|n| n as u16), horizontal_angle: None, vertical_angle: None, zoom: None, request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade, generation_mode_mismatch_strategy: Some(mismatch), idempotency_token: None })
+  Ok(GenerateImageRequestBuilder {
+    model,
+    provider,
+    prompt: fields.get("prompt").and_then(Value::as_str).map(str::to_owned),
+    image_inputs: (!image_urls.is_empty()).then_some(ImageListRef::Urls(image_urls)),
+    resolution: parse(fields.get("resolution")),
+    aspect_ratio: parse(fields.get("aspect_ratio")),
+    quality: parse(fields.get("quality")),
+    image_batch_count: fields.get("image_batch_count").and_then(Value::as_u64).map(|n| n as u16),
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
+    generation_mode_mismatch_strategy: Some(mismatch),
+    idempotency_token: None,
+  })
 }
 
 fn new_job(provider: Provider, fields: &Map<String, Value>, batch_count: u32, provider_job_id: String, maybe_status_url: Option<String>, maybe_response_url: Option<String>, maybe_prompt_token: Option<String>) -> ProviderJob {
-  ProviderJob { id: format!("local_{}", uuid::Uuid::new_v4()), provider, model_id: model_id(fields).to_owned(), prompt: fields.get("prompt").and_then(Value::as_str).unwrap_or_default().to_owned(), created_at: chrono::Utc::now().timestamp(), batch_count, provider_job_id, maybe_status_url, maybe_response_url, maybe_prompt_token, batch_token: BatchGenerationToken::generate().to_string(), upload_tokens: Vec::new(), uploaded: Vec::new() }
+  ProviderJob {
+    id: format!("local_{}", uuid::Uuid::new_v4()),
+    provider,
+    model_id: model_id(fields).to_owned(),
+    prompt: fields.get("prompt").and_then(Value::as_str).unwrap_or_default().to_owned(),
+    created_at: chrono::Utc::now().timestamp(),
+    batch_count,
+    provider_job_id,
+    maybe_status_url,
+    maybe_response_url,
+    maybe_prompt_token,
+    batch_token: BatchGenerationToken::generate().to_string(),
+    upload_tokens: Vec::new(),
+    uploaded: Vec::new(),
+  }
 }
 
 /// What the user sees for a router error: billing problems point at the provider's website

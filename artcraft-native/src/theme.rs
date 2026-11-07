@@ -143,7 +143,13 @@ fn visuals() -> Visuals {
   v.warn_fg_color = BADGE_BETA;
   v.error_fg_color = BAD;
   v.striped = false;
-  for (w, fill, stroke, fg) in [(&mut v.widgets.noninteractive, CONTROLS, LINE, MUTED), (&mut v.widgets.inactive, CONTROLS, LINE, INK), (&mut v.widgets.hovered, WASH_HOVER, LINE_STRONG, INK_STRONG), (&mut v.widgets.active, WASH_HOVER, LINE_STRONG, INK_STRONG), (&mut v.widgets.open, WASH_HOVER, LINE_STRONG, INK_STRONG)] {
+  for (w, fill, stroke, fg) in [
+    (&mut v.widgets.noninteractive, CONTROLS, LINE, MUTED),
+    (&mut v.widgets.inactive, CONTROLS, LINE, INK),
+    (&mut v.widgets.hovered, WASH_HOVER, LINE_STRONG, INK_STRONG),
+    (&mut v.widgets.active, WASH_HOVER, LINE_STRONG, INK_STRONG),
+    (&mut v.widgets.open, WASH_HOVER, LINE_STRONG, INK_STRONG),
+  ] {
     w.bg_fill = fill;
     w.weak_bg_fill = fill;
     w.bg_stroke = Stroke::new(1.0, stroke);
@@ -166,7 +172,14 @@ pub fn apply(ctx: &egui::Context) {
     style.spacing.menu_margin = egui::Margin::same(4);
     style.spacing.window_margin = egui::Margin::same(16);
     style.spacing.scroll = egui::style::ScrollStyle { bar_width: 8.0, floating: true, ..egui::style::ScrollStyle::thin() };
-    style.text_styles = [(TextStyle::Heading, FontId::new(24.0, display())), (TextStyle::Body, FontId::new(14.0, FontFamily::Proportional)), (TextStyle::Button, FontId::new(14.0, medium())), (TextStyle::Small, FontId::new(12.0, FontFamily::Proportional)), (TextStyle::Monospace, FontId::new(13.0, FontFamily::Monospace))].into();
+    style.text_styles = [
+      (TextStyle::Heading, FontId::new(24.0, display())),
+      (TextStyle::Body, FontId::new(14.0, FontFamily::Proportional)),
+      (TextStyle::Button, FontId::new(14.0, medium())),
+      (TextStyle::Small, FontId::new(12.0, FontFamily::Proportional)),
+      (TextStyle::Monospace, FontId::new(13.0, FontFamily::Monospace)),
+    ]
+    .into();
   });
 }
 
@@ -181,7 +194,15 @@ fn install_fonts(ctx: &egui::Context) {
   let mut fonts = FontDefinitions::default();
   // egui's own fonts stay behind ours, for symbols and emoji ours don't have.
   let fallback = fonts.families.get(&FontFamily::Proportional).cloned().unwrap_or_default();
-  let faces: [Face<'_>; 7] = [("Inter", INTER, &[(*b"wght", 400.0), (*b"opsz", 14.0)], FontFamily::Proportional), ("Inter-Medium", INTER, &[(*b"wght", 500.0), (*b"opsz", 14.0)], medium()), ("Inter-SemiBold", INTER, &[(*b"wght", 600.0), (*b"opsz", 14.0)], semibold()), ("Archivo-Display", ARCHIVO, &[(*b"wght", 620.0), (*b"wdth", 118.0)], display()), ("GeistMono", GEIST_MONO, &[(*b"wght", 400.0)], FontFamily::Monospace), ("GeistMono-Medium", GEIST_MONO, &[(*b"wght", 500.0)], mono()), ("GeistMono-SemiBold", GEIST_MONO, &[(*b"wght", 650.0)], mono_bold())];
+  let faces: [Face<'_>; 7] = [
+    ("Inter", INTER, &[(*b"wght", 400.0), (*b"opsz", 14.0)], FontFamily::Proportional),
+    ("Inter-Medium", INTER, &[(*b"wght", 500.0), (*b"opsz", 14.0)], medium()),
+    ("Inter-SemiBold", INTER, &[(*b"wght", 600.0), (*b"opsz", 14.0)], semibold()),
+    ("Archivo-Display", ARCHIVO, &[(*b"wght", 620.0), (*b"wdth", 118.0)], display()),
+    ("GeistMono", GEIST_MONO, &[(*b"wght", 400.0)], FontFamily::Monospace),
+    ("GeistMono-Medium", GEIST_MONO, &[(*b"wght", 500.0)], mono()),
+    ("GeistMono-SemiBold", GEIST_MONO, &[(*b"wght", 650.0)], mono_bold()),
+  ];
   for (name, bytes, coords, family) in faces {
     let tweak = FontTweak { coords: VariationCoords::new(coords.iter().copied()), ..Default::default() };
     fonts.font_data.insert(name.to_owned(), Arc::new(FontData::from_static(bytes).tweak(tweak)));

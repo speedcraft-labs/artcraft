@@ -79,7 +79,9 @@ impl MidjourneyCredentialManager {
   }
 
   pub fn session_appears_active(&self) -> anyhow::Result<bool> {
-    Ok(self.snapshot()?.is_some_and(|credential| credential.cookie.maybe_relogin_required_since.is_none() && (cookie_store_has_auth_cookies(&credential.cookie.cookies) || !token_needs_refresh(credential.cookie.cookies.get_cookie_value(AUTH_COOKIE_NAME_I), Utc::now().timestamp()))))
+    Ok(self.snapshot()?.is_some_and(|credential| {
+      credential.cookie.maybe_relogin_required_since.is_none() && (cookie_store_has_auth_cookies(&credential.cookie.cookies) || !token_needs_refresh(credential.cookie.cookies.get_cookie_value(AUTH_COOKIE_NAME_I), Utc::now().timestamp()))
+    }))
   }
 
   pub async fn save_login(&self, cookies: CookieStore) -> anyhow::Result<()> {

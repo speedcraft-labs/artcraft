@@ -252,7 +252,14 @@ mod tests {
         println!("Live flow succeeded: websocket_completed={}, HTTP reconciliation verified, batch={}, uploaded_files={}", websocket_completed, batch.as_str(), files.media_files.len());
         for file in files.media_files {
           let prompt = file.maybe_prompt_token.as_ref().ok_or_else(|| anyhow::anyhow!("Uploaded image has no prompt attribution"))?;
-          let prompt: serde_json::Value = reqwest::Client::new().get(format!("{}/v1/prompts/{}", config.storyteller_host.to_api_hostname_and_scheme(), prompt.as_str())).header("Cookie", storyteller_credentials.maybe_as_cookie_header().unwrap_or_default()).send().await?.error_for_status()?.json().await?;
+          let prompt: serde_json::Value = reqwest::Client::new()
+            .get(format!("{}/v1/prompts/{}", config.storyteller_host.to_api_hostname_and_scheme(), prompt.as_str()))
+            .header("Cookie", storyteller_credentials.maybe_as_cookie_header().unwrap_or_default())
+            .send()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?;
           assert_eq!(prompt["prompt"]["maybe_generation_provider"], "midjourney");
           assert_eq!(prompt["prompt"]["maybe_model_type"], "midjourney_8");
           println!("Uploaded result: {} {}; backend prompt provider=midjourney model=midjourney_8", file.token.as_str(), file.media_links.cdn_url);

@@ -83,8 +83,7 @@ pub struct EnqueueImageToGaussianRequest {
 }
 
 #[derive(Serialize)]
-pub struct EnqueueImageToGaussianSuccessResponse {
-}
+pub struct EnqueueImageToGaussianSuccessResponse {}
 
 impl SerializeMarker for EnqueueImageToGaussianSuccessResponse {}
 
@@ -112,19 +111,9 @@ pub async fn enqueue_image_to_gaussian_command(
   storyteller_creds_manager: State<'_, StorytellerCredentialManager>,
   worldlabs_creds_manager: State<'_, WorldlabsCredentialManager>,
 ) -> Response<EnqueueImageToGaussianSuccessResponse, EnqueueImageToGaussianErrorType, ()> {
-
   info!("enqueue_image_to_gaussian called");
 
-  let result = handle_request(
-    request,
-    &app,
-    &app_data_root,
-    &artcraft_usage_tracker,
-    &task_database,
-    &storyteller_creds_manager,
-    &worldlabs_creds_manager,
-    &app_env_configs,
-  ).await;
+  let result = handle_request(request, &app, &app_data_root, &artcraft_usage_tracker, &task_database, &storyteller_creds_manager, &worldlabs_creds_manager, &app_env_configs).await;
 
   match result {
     Err(err) => {
@@ -141,37 +130,28 @@ pub async fn enqueue_image_to_gaussian_command(
           status = CommandErrorStatus::BadRequest;
           error_type = EnqueueImageToGaussianErrorType::ModelNotSpecified;
           error_message = "No model specified for image generation";
-        }
+        },
         GenerateError::NoProviderAvailable => {
           status = CommandErrorStatus::ServerError;
           error_type = EnqueueImageToGaussianErrorType::NoProviderAvailable;
           error_message = "No configured provider available for image generation";
-        }
+        },
         _ => {}, // Fall-through
       }
 
-      Err(CommandErrorResponseWrapper {
-        status,
-        error_message: Some(error_message.to_string()),
-        error_type: Some(error_type),
-        error_details: None,
-      })
-    }
+      Err(CommandErrorResponseWrapper { status, error_message: Some(error_message.to_string()), error_type: Some(error_type), error_details: None })
+    },
     Ok(event) => {
-      let event = GenerationEnqueueSuccessEvent {
-        action: event.to_frontend_event_action(),
-        service: event.to_frontend_event_service(),
-        model: event.model,
-      };
+      let event = GenerationEnqueueSuccessEvent { action: event.to_frontend_event_action(), service: event.to_frontend_event_service(), model: event.model };
 
       if let Err(err) = event.send(&app) {
         error!("Failed to emit event: {:?}", err); // Fail open.
       }
-      
-      CreditsBalanceChangedEvent{}.send_infallible(&app);
+
+      CreditsBalanceChangedEvent {}.send_infallible(&app);
 
       Ok(EnqueueImageToGaussianSuccessResponse {}.into())
-    }
+    },
   }
 }
 
@@ -185,29 +165,14 @@ pub async fn handle_request(
   worldlabs_creds_manager: &WorldlabsCredentialManager,
   app_env_configs: &AppEnvConfigs,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
-  
-  let result = dispatch_request(
-    &request,
-    &app,
-    &app_data_root,
-    &storyteller_creds_manager,
-    &worldlabs_creds_manager,
-    &app_env_configs,
-  ).await;
-  
+  let result = dispatch_request(&request, &app, &app_data_root, &storyteller_creds_manager, &worldlabs_creds_manager, &app_env_configs).await;
+
   let success_event = match result {
     Err(err) => return Err(err),
     Ok(event) => event,
   };
 
-  let result = success_event
-      .insert_into_task_database_with_frontend_payload(
-        task_database,
-        request.frontend_caller,
-        request.frontend_subscriber_id.as_deref(),
-        request.frontend_subscriber_payload.as_deref(),
-      )
-      .await;
+  let result = success_event.insert_into_task_database_with_frontend_payload(task_database, request.frontend_caller, request.frontend_subscriber_id.as_deref(), request.frontend_subscriber_payload.as_deref()).await;
 
   if let Err(err) = result {
     error!("Failed to create task in database: {:?}", err);
@@ -230,7 +195,6 @@ pub async fn dispatch_request(
   worldlabs_creds_manager: &WorldlabsCredentialManager,
   app_env_configs: &AppEnvConfigs,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
-
   if request.model.is_none() {
     return Err(GenerateError::BadInput(BadInputReason::NoModelSpecified));
   }
@@ -238,25 +202,8 @@ pub async fn dispatch_request(
   let provider = request.provider.unwrap_or(GenerationProvider::Artcraft);
 
   match provider {
-    GenerationProvider::WorldLabs => {
-      handle_worldlabs_marble(
-        app,
-        app_data_root,
-        app_env_configs,
-        request,
-        worldlabs_creds_manager,
-      ).await
-    }
-    GenerationProvider::Artcraft => {
-      handle_gaussian_artcraft(
-        request,
-        app,
-        app_env_configs,
-        storyteller_creds_manager,
-      ).await
-    }
-    _ => {
-      Err(GenerateError::NoProviderAvailable)
-    }
+    GenerationProvider::WorldLabs => handle_worldlabs_marble(app, app_data_root, app_env_configs, request, worldlabs_creds_manager).await,
+    GenerationProvider::Artcraft => handle_gaussian_artcraft(request, app, app_env_configs, storyteller_creds_manager).await,
+    _ => Err(GenerateError::NoProviderAvailable),
   }
 }

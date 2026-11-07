@@ -61,7 +61,13 @@ pub struct MidjourneyCookieCredential {
 
 impl MidjourneyCredential {
   pub fn new(cookies: CookieStore) -> Self {
-    Self { id: new_credential_id(), service: MidjourneyService::Cookies, maybe_name: None, maybe_user_info: None, cookie: MidjourneyCookieCredential { maybe_updated_at: Some(Utc::now()), maybe_failed_at: None, maybe_succeeded_at: None, maybe_relogin_required_since: None, maybe_user_agent: Some(MIDJOURNEY_USER_AGENT.to_string()), cookies } }
+    Self {
+      id: new_credential_id(),
+      service: MidjourneyService::Cookies,
+      maybe_name: None,
+      maybe_user_info: None,
+      cookie: MidjourneyCookieCredential { maybe_updated_at: Some(Utc::now()), maybe_failed_at: None, maybe_succeeded_at: None, maybe_relogin_required_since: None, maybe_user_agent: Some(MIDJOURNEY_USER_AGENT.to_string()), cookies },
+    }
   }
 
   pub fn load(path: &Path) -> anyhow::Result<Self> {

@@ -1,4 +1,3 @@
-
 /// This is meant to track 401s and other credential failures, not 500s.
 #[derive(Clone)]
 pub struct SoraCredentialStats {
@@ -26,7 +25,7 @@ impl SoraCredentialStats {
       consecutive_credential_failure_count: 0,
     }
   }
-  
+
   pub fn record_credential_success(&mut self) {
     let now = chrono::Utc::now();
     self.last_credential_success = Some(now);

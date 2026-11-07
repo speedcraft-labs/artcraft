@@ -45,7 +45,6 @@ pub enum TaskFailureType {
 impl_enum_display_and_debug_using_to_str!(TaskFailureType);
 
 impl TaskFailureType {
-
   /// Convert the web API's `FrontendFailureCategory` to a Tauri-facing type, if there is a matching variant.
   /// If there isn't a matching variant, return `Unknown`.
   pub fn from_frontend_failure_category(category: FrontendFailureCategory) -> Self {
@@ -94,7 +93,7 @@ impl TaskFailureType {
       FrontendFailureCategoryForApiClients::Unknown(ref value) => {
         log::debug!("Unknown FrontendFailureCategoryForApiClients variant: {}", value);
         Self::Unknown
-      }
+      },
     }
   }
 

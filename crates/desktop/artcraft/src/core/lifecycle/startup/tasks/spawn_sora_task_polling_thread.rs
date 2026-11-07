@@ -17,16 +17,7 @@ pub fn spawn_sora_task_polling_thread(
   storyteller_creds_manager: &StorytellerCredentialManager,
   sora_task_queue: &SoraTaskQueue,
 ) -> AnyhowResult<()> {
-
-  tauri::async_runtime::spawn(sora_task_polling_thread(
-    app.clone(),
-    app_env_configs.clone(),
-    root.clone(),
-    task_database.clone(),
-    sora_credential_manager.clone(),
-    storyteller_creds_manager.clone(),
-    sora_task_queue.clone(),
-  ));
+  tauri::async_runtime::spawn(sora_task_polling_thread(app.clone(), app_env_configs.clone(), root.clone(), task_database.clone(), sora_credential_manager.clone(), storyteller_creds_manager.clone(), sora_task_queue.clone()));
 
   Ok(())
 }
